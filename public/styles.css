@@ -1,0 +1,195 @@
+/* General Reset & Theming */
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, 'Apple Color Emoji', 'Segoe UI Emoji';
+  background: #0b1220;
+  color: #e6eaf2;
+  font-size: 16px;
+}
+
+/* Main Page Layout */
+.page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Topbar */
+.topbar {
+  flex-shrink: 0;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  background: #0e1526;
+  border-bottom: 1px solid #1b2a4a;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.sidebar-toggle-btn {
+  background: none;
+  border: none;
+  color: #e6eaf2;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0;
+  display: none; /* Hidden by default, shown in media query */
+}
+
+.brand {
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.room-id {
+  color: #9fb3c8;
+  font-size: 12px;
+}
+
+/* Main content area */
+.container {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: row;
+  overflow: hidden;
+  position: relative; /* Needed for overlay positioning */
+}
+
+.sidebar {
+  flex-shrink: 0;
+  width: 280px;
+  border-right: 1px solid #1b2a4a;
+  padding: 16px;
+  overflow-y: auto;
+  transition: width 0.3s ease, margin-left 0.3s ease;
+  position: relative; /* For close button positioning */
+}
+
+.sidebar-close-btn {
+    display: none; /* Hidden by default */
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    background: none;
+    border: none;
+    color: #9fb3c8;
+    font-size: 28px;
+    cursor: pointer;
+}
+
+.chat {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* --- Desktop Collapsed State --- */
+.sidebar-open .sidebar {
+  width: 280px;
+  margin-left: 0;
+}
+
+/* Sidebar Sections & Forms (shared styles) */
+.section { margin-bottom: 24px; }
+.section-title { font-size: 12px; color: #8aa0b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.user-list { list-style: none; padding: 0; margin: 0; }
+.user-list li { padding: 6px 10px; border-radius: 6px; background: #0f192f; margin-bottom: 6px; color: #d7e2f2; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+input, button { font-size: 1rem; }
+.join-form { display: flex; flex-direction: column; gap: 8px; }
+.join-form input { background: #0f192f; border: 1px solid #1b2a4a; color: #e6eaf2; border-radius: 8px; padding: 10px 12px; width: 100%; }
+.join-form button { background: #3358ff; color: white; border: none; padding: 10px 12px; border-radius: 8px; cursor: pointer; transition: background-color 0.2s; }
+.join-form button:hover { background: #2746d8; }
+
+.leave-btn {
+  width: 100%;
+  background: #4b1818;
+  color: #ff9e9e;
+  border: 1px solid #782d2d;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.leave-btn:hover {
+    background: #632222;
+    color: white;
+}
+
+/* Chat Area */
+.messages { flex-grow: 1; list-style: none; padding: 16px; margin: 0; overflow-y: auto; }
+.messages li { padding: 8px 12px; margin-bottom: 8px; border-radius: 8px; background: #0f192f; word-wrap: break-word; }
+.message-form { flex-shrink: 0; display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid #1b2a4a; }
+.message-form input { flex-grow: 1; background: #0f192f; border: 1px solid #1b2a4a; color: #e6eaf2; border-radius: 8px; padding: 12px; }
+.message-form button { background: #3358ff; color: white; border: none; padding: 12px 16px; border-radius: 8px; cursor: pointer; transition: background-color 0.2s; }
+.message-form button:hover { background: #2746d8; }
+
+/* --- DESKTOP: Default state is sidebar open --- */
+@media (min-width: 769px) {
+  .page:not(.sidebar-open) .sidebar {
+    width: 0;
+    padding-left: 0;
+    padding-right: 0;
+    overflow: hidden;
+  }
+  .sidebar-toggle-btn {
+    display: block; /* Show button on desktop */
+  }
+}
+
+/* --- MOBILE: Default state is sidebar closed --- */
+@media (max-width: 768px) {
+  .sidebar-toggle-btn {
+    display: block; /* Show button on mobile */
+  }
+  .sidebar-close-btn {
+      display: block; /* Show close button on mobile */
+  }
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 85%; /* Sidebar takes 85% of width */
+    max-width: 300px; /* Max width on larger phones/tablets */
+    background: #0e1526;
+    z-index: 1000;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease-in-out;
+    border-right: 1px solid #1b2a4a;
+  }
+  .page.sidebar-open .sidebar {
+    transform: translateX(0);
+  }
+  /* Background overlay when sidebar is open on mobile */
+  .container::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease-in-out;
+  }
+  .page.sidebar-open .container::after {
+    opacity: 1;
+    pointer-events: all;
+  }
+}
