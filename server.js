@@ -1,10 +1,11 @@
+// --- server.js (修改后，已移除 Ngrok) ---
+
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
-const { spawn } = require("child_process");
 const os = require("os");
 const path = require("path");
-const readline = require("readline"); // Import readline for interactive prompts
+const readline = require("readline");
 const db = require("./sqlite");
 
 const app = express();
@@ -36,21 +37,14 @@ const roomIdToUsers = new Map();
 
 function getLanAddress() {
   const ifaces = os.networkInterfaces();
-  const privateIps = [];
-  const otherIps = [];
-
   for (const name of Object.keys(ifaces)) {
     for (const iface of ifaces[name] || []) {
       if (iface.family === "IPv4" && !iface.internal) {
-        if (/^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/.test(iface.address)) {
-          privateIps.push(iface.address);
-        } else {
-          otherIps.push(iface.address);
-        }
+        return iface.address;
       }
     }
   }
-  return privateIps[0] || otherIps[0] || "localhost";
+  return "localhost";
 }
 
 function emitRoomUsers(roomId) {
@@ -97,31 +91,18 @@ io.on("connection", (socket) => {
       }
 
       if (existingSocketId) {
-        console.log(`Nickname "${name}" exists. Pinging old socket...`);
         const oldSocket = io.sockets.sockets.get(existingSocketId);
         if (!oldSocket) {
-          console.log("Old socket not found, allowing reclaim.");
           usersMap.delete(existingSocketId);
         } else {
-          // Use the built-in timeout feature, which is much cleaner.
           const isAlive = await new Promise((resolve) => {
             oldSocket.timeout(2000).emit("server-ping", (err, pong) => {
-              // If there's an error (timeout) or the response is not "ok", 
-              // we consider the old socket dead.
-              if (err || !pong || pong[0] !== "ok") {
-                resolve(false);
-              } else {
-                resolve(true);
-              }
+              resolve(!(err || !pong || pong[0] !== "ok"));
             });
           });
-
           if (isAlive) {
-            // The old user is still active.
             return ack({ ok: false, error: "该昵称已被占用" });
           } else {
-            // The old user is a zombie. Reclaim the name.
-            console.log("Ping timed out or failed, reclaiming nickname.");
             removeUserFromRoom(oldSocket, roomId);
             oldSocket.disconnect(true);
           }
@@ -141,7 +122,6 @@ io.on("connection", (socket) => {
       socket.emit("history", history);
       emitRoomUsers(roomId);
       ack({ ok: true });
-
     } catch (e) {
       ack({ ok: false, error: String(e) });
     }
@@ -174,54 +154,17 @@ io.on("connection", (socket) => {
   });
 });
 
-let ngrokProcess = null;
-const PORT = Number(process.argv[2] || process.env.PORT || 3000);
+const PORT = Number(process.env.PORT || 3000);
 
 server.listen(PORT, () => {
   console.log(`本地服务运行在 http://localhost:${PORT}`);
   const lan = getLanAddress();
   console.log(`局域网访问: http://${lan}:${PORT}`);
-  console.log(`房间链接格式: http://${lan}:${PORT}/r/<your-room-id>`);
 
-  if (process.env.ENABLE_NGROK) {
-    console.log("Attempting to start ngrok via child_process...");
-    const ngrokPath = path.join(__dirname, "node_modules", "ngrok", "bin", "ngrok.exe");
-    ngrokProcess = spawn(ngrokPath, ["http", PORT]);
-
-    ngrokProcess.stdout.on("data", (data) => console.log(`[ngrok stdout]: ${data}`));
-    ngrokProcess.stderr.on("data", (data) => console.error(`[ngrok stderr]: ${data}`));
-
-    setTimeout(() => {
-      http.get("http://127.0.0.1:4040/api/tunnels", (res) => {
-        let data = "";
-        res.on("data", (chunk) => (data += chunk));
-        res.on("end", () => {
-          try {
-            const tunnels = JSON.parse(data).tunnels;
-            const httpsTunnel = tunnels.find((t) => t.proto === "https");
-            if (httpsTunnel) {
-              console.log(`\n=================================================================`);
-              console.log(`  Ngrok 公网地址: ${httpsTunnel.public_url}`);
-              console.log(`  房间链接示例: ${httpsTunnel.public_url}/r/your-room-id`);
-              console.log(`=================================================================\n`);
-            } else {
-              console.error("Ngrok API 未返回 HTTPS 隧道信息。");
-            }
-          } catch (e) {
-            console.error("解析 Ngrok API 响应失败:", e);
-          }
-        });
-      }).on("error", (err) => {
-        console.error("连接 Ngrok API 失败: ", err.message);
-        console.error("请确认 ngrok 进程是否已成功启动，并且 4040 端口未被占用。");
-      });
-    }, 3000);
-  } else {
-    console.log("未开启 ngrok。如需公网访问，请在启动时添 加任意第二个参数，例如: start-chat.bat 3000 ngrok-on");
-  }
+  // ---- 这里是修改过的部分 ----
+  console.log("服务已启动，请通过宝塔面板设置的反向代理域名进行访问。");
 });
 
-// --- NEW: Interactive Shutdown Logic ---
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
@@ -229,7 +172,6 @@ const rl = readline.createInterface({
 
 async function gracefulShutdown(askForCleanup = false) {
   console.log("\nShutting down gracefully...");
-
   const cleanupAndExit = async (cleanup) => {
     if (cleanup) {
       try {
@@ -237,11 +179,6 @@ async function gracefulShutdown(askForCleanup = false) {
       } catch (e) {
         console.error("Error clearing database:", e);
       }
-    }
-    if (ngrokProcess) {
-      console.log("Attempting to kill ngrok process...");
-      ngrokProcess.kill();
-      console.log("Ngrok process killed.");
     }
     console.log("Exiting main process.");
     process.exit(0);
@@ -254,9 +191,9 @@ async function gracefulShutdown(askForCleanup = false) {
       await cleanupAndExit(shouldCleanup);
     });
   } else {
-    await cleanupAndExit(false); // Default to not cleaning up
+    await cleanupAndExit(false);
   }
 }
 
-process.on("SIGINT", () => gracefulShutdown(true)); // Ask on Ctrl+C
-process.on("SIGTERM", () => gracefulShutdown(false)); // Don't ask on other termination signals
+process.on("SIGINT", () => gracefulShutdown(true));
+process.on("SIGTERM", () => gracefulShutdown(false));
