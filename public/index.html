@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>即时聊天 - 多房间</title>
+  <title>Link Space Chat</title>
   <link rel="stylesheet" href="/styles.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,27 +14,33 @@
     <header class="topbar">
       <div class="topbar-left">
         <button id="sidebarToggleBtn" class="sidebar-toggle-btn">&#9776;</button>
-        <div class="brand">Do It Dui Chat</div>
+        <div class="brand">Link Space Chat</div>
       </div>
       <div class="room-id" id="roomIdLabel"></div>
     </header>
     <main class="container">
       <aside class="sidebar">
-        <button id="sidebarCloseBtn" class="sidebar-close-btn">&times;</button>
-        <div class="section">
-          <div class="section-title">在线用户</div>
-          <ul id="userList" class="user-list"></ul>
+        <div class="sidebar-content">
+          <button id="sidebarCloseBtn" class="sidebar-close-btn">&times;</button>
+          <div class="section">
+            <div class="section-title">在线用户</div>
+            <ul id="userList" class="user-list"></ul>
+          </div>
+          <div class="section">
+            <div class="section-title">加入房间</div>
+            <form id="joinForm" class="join-form">
+              <input id="nickname" placeholder="昵称" maxlength="24" />
+              <input id="roomIdInput" placeholder="房间ID（留空使用URL）" maxlength="40" />
+              <button type="submit">进入</button>
+            </form>
+          </div>
+          <div class="section">
+              <button id="shareBtn" class="share-btn">分享房间</button>
+              <button id="leaveBtn" class="leave-btn">退出房间</button>
+          </div>
         </div>
-        <div class="section">
-          <div class="section-title">加入房间</div>
-          <form id="joinForm" class="join-form">
-            <input id="nickname" placeholder="昵称" maxlength="24" />
-            <input id="roomIdInput" placeholder="房间ID（留空使用URL）" maxlength="40" />
-            <button type="submit">进入</button>
-          </form>
-        </div>
-        <div class="section">
-            <button id="leaveBtn" class="leave-btn">退出房间</button>
+        <div class="sidebar-footer">
+          由 Do It Dui Team 开发
         </div>
       </aside>
       <section class="chat">
@@ -47,8 +53,22 @@
     </main>
   </div>
 
-  <!-- 引入 socket.io 客户端脚本 -->
+  <!-- Share Modal -->
+  <div id="shareModal" class="modal-overlay">
+    <div class="modal-content">
+      <button id="closeModalBtn" class="modal-close-btn">&times;</button>
+      <h3>分享房间</h3>
+      <div id="qrCode" class="qr-code"></div>
+      <div class="share-link-container">
+        <input type="text" id="shareLinkInput" readonly />
+        <button id="copyLinkBtn">复制</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 引入 socket.io 和 qrcode 客户端脚本 -->
   <script src="/socket.io/socket.io.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
   <script src="/app.js"></script>
 </body>
 </html>
