@@ -170,7 +170,11 @@ const rl = readline.createInterface({
   output: process.stdout,
 });
 
+let isShuttingDown = false;
 async function gracefulShutdown(askForCleanup = false) {
+  if (isShuttingDown) return;
+  isShuttingDown = true;
+
   console.log("\nShutting down gracefully...");
   const cleanupAndExit = async (cleanup) => {
     if (cleanup) {
