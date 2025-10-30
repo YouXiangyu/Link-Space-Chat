@@ -50,26 +50,54 @@
 
 ### 三、启动服务
 
-启动后，服务将同时监听本地和局域网 IP。
+启动后，服务将同时监听本地和局域网 IP，默认端口为 `3000`。关于如何修改端口，请参考下一节的说明。
 
-- **方式 A (推荐)**: 直接双击根目录下的 `start-chat.bat` 文件。
+- **方式 A (推荐)**: 直接双击根目录下的 `start-chat.bat` 文件 (使用默认端口)。
 - **方式 B (命令行)**:
   ```powershell
   npm run start
   ```
 
-控制台将输出以下信息，表示启动成功：
+控制台将输出以下信息 (以端口3000为例)：
 - **本地访问**: `http://localhost:3000`
 - **局域网访问**: `http://<你的局域网IP>:3000`
-- **房间链接格式**: `http://<你的局域网IP>:3000/r/<room-id>` (其中 `<room-id>` 为自定义的房间名)
 
-### 四、数据库说明
+### 四、端口配置
+
+本项目的端口可以通过多种方式进行配置，生效优先级从高到低如下：
+
+1.  **命令行参数 (最高)**
+    在运行 `start-chat.bat` 时，将端口号作为第一个参数传入。这是最快捷的临时修改方式。
+    ```cmd
+    # 以 4000 端口启动服务
+    start-chat.bat 4000
+    ```
+
+2.  **环境变量**
+    设置名为 `LINK_SPACE_PORT` 的环境变量。此方式适合较为固定的配置。
+    - **Windows (CMD)**:
+      ```cmd
+      set LINK_SPACE_PORT=4000
+      npm run start
+      ```
+    - **Windows (PowerShell)**:
+      ```powershell
+      $env:LINK_SPACE_PORT = "4000"
+      npm run start
+      ```
+
+3.  **默认值 (最低)**
+    如果以上两种方式都未设置，则使用默认端口 `3000`。
+
+### 五、数据库说明
 
 - **数据库文件**: 项目使用 SQLite 数据库存储聊天记录，文件名为 `chat.db`。
 - **自动创建**: 您**无需**手动创建数据库。首次启动服务时，`sqlite.js` 脚本会自动检测并创建 `chat.db` 文件及所需的数据表（`rooms` 和 `messages`）。
 - **文件忽略**: `chat.db` 文件包含了所有的聊天历史记录。为了避免将个人或测试的聊天数据提交到版本控制系统（如 Git），`.gitignore` 文件已配置为忽略 `chat.db`。这确保了仓库的干净，同时保护了本地数据的私密性。
 
-### 五、开启公网访问 (可选)
+### 六、开启公网访问 (可选)
+
+> **注意**: 此功能依赖 `ngrok` 包，但当前版本的 `server.js` 中已移除了 ngrok 的集成代码。以下为原始文档，如需使用，请自行恢复或修改 `server.js`。
 
 本项目集成了 `ngrok`，可以将本地服务暴露到公网，方便外网用户访问。
 
@@ -80,28 +108,15 @@
 2.  **配置并启动**
     在启动服务时，将获取到的 `Authtoken` 作为环境变量传入。
 
-    - **Windows (PowerShell)**:
-      ```powershell
-      $env:NGROK_AUTHTOKEN = "这里替换成你的Token"
-      npm run start
-      ```
-
     - **Windows (CMD)**:
       ```cmd
       set NGROK_AUTHTOKEN=这里替换成你的Token
       npm run start
       ```
 
-    - **通过 `start-chat.bat` 传参**:
-      `start-chat.bat` 支持传入端口和 Token 作为参数。
-      ```cmd
-      # 格式: start-chat.bat [端口号] [ngrok_token]
-      start-chat.bat 3001 "这里替换成你的Token"
-      ```
-
     启动成功后，控制台会额外输出一个公网 URL，形如 `https://xxxxx.ngrok.io`。其他用户可通过此地址访问你的聊天室。
 
-### 六、功能测试
+### 七、功能测试
 
 - **健康检查**: 访问 `http://localhost:3000/health`，应返回 `{ "ok": true }`。
 - **基本聊天**: 在不同浏览器标签页打开 `http://localhost:3000/r/test`，输入昵称后即可开始聊天。
