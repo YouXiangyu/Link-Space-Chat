@@ -138,8 +138,8 @@
       textEl.className += " message-emoji";
       textEl.textContent = status === 'sending' ? "发送中…" : text;
     } else {
-      // 普通文本，支持换行
-      textEl.innerHTML = (status === 'sending' ? "发送中…" : text).replace(/\n/g, '<br>');
+      // 普通文本，使用 textContent 防止 XSS，换行由样式处理
+      textEl.textContent = (status === 'sending' ? "发送中…" : text);
     }
 
     const content = document.createElement("div");

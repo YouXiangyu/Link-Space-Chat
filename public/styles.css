@@ -452,6 +452,7 @@ input, button { font-size: 1rem; }
   color: #e6eaf2;
   word-wrap: break-word;
   line-height: 1.5;
+  white-space: pre-wrap; /* 保留换行并防止XSS时主动插入HTML */
 }
 
 .message-emoji {

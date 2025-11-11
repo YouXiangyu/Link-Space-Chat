@@ -319,7 +319,7 @@ io.on("connection", (socket) => {
         } else {
           const isAlive = await new Promise((resolve) => {
             oldSocket.timeout(2000).emit("server-ping", (err, pong) => {
-              resolve(!(err || !pong || pong[0] !== "ok"));
+              resolve(!err && pong === "ok");
             });
           });
           if (isAlive) {
@@ -571,50 +571,62 @@ async function performHealthCheck() {
 }
 
 // ==================== 启动服务器 ====================
-server.listen(PORT, async () => {
-  console.log(`本地服务运行在 http://localhost:${PORT}`);
-  const lan = getLanAddress();
-  console.log(`局域网访问: http://${lan}:${PORT}`);
-  console.log(`[配置] 消息保留天数: ${MESSAGE_RETENTION_DAYS} 天`);
-  console.log(`[配置] 请求日志: ${ENABLE_REQUEST_LOG ? '已启用' : '已禁用'}`);
-
-  // 如果启用ngrok
-  if (enableNgrok) {
-    const ngrok = require("ngrok");
-    const authtoken = process.env.NGROK_AUTHTOKEN;
-    
-    if (!authtoken) {
-      console.warn("警告: 未设置 NGROK_AUTHTOKEN 环境变量，ngrok 可能无法正常工作");
-      console.warn("请设置环境变量: set NGROK_AUTHTOKEN=你的token");
-    } else {
-      try {
-        await ngrok.authtoken(authtoken);
-        const url = await ngrok.connect(PORT);
-        console.log(`\n公网访问地址: ${url}`);
-        console.log("ngrok 已启动，服务已暴露到公网\n");
-      } catch (err) {
-        console.error("ngrok 启动失败:", err.message);
-        console.log("服务已启动，但未启用 ngrok");
-      }
-    }
-  } else {
-    console.log("服务已启动（未启用 ngrok）");
+async function main() {
+  // 确保数据库初始化与迁移完成，避免写入竞态
+  if (db && typeof db.ready?.then === 'function') {
+    await db.ready;
   }
-  
-  // 启动定时任务
-  console.log("\n[定时任务] 已启动以下定时任务:");
-  console.log("  - 内存监控: 每5分钟检查一次");
-  console.log("  - 消息清理: 每小时执行一次");
-  console.log("  - 健康检查: 每3分钟执行一次\n");
-  
-  // 启动内存监控
-  checkMemoryUsage();
-  
-  // 启动消息自动清理（延迟1分钟后首次执行，避免启动时立即清理）
-  setTimeout(cleanupOldMessages, 60 * 1000);
-  
-  // 启动健康检查（延迟30秒后首次执行）
-  setTimeout(performHealthCheck, 30 * 1000);
+
+  server.listen(PORT, async () => {
+    console.log(`本地服务运行在 http://localhost:${PORT}`);
+    const lan = getLanAddress();
+    console.log(`局域网访问: http://${lan}:${PORT}`);
+    console.log(`[配置] 消息保留天数: ${MESSAGE_RETENTION_DAYS} 天`);
+    console.log(`[配置] 请求日志: ${ENABLE_REQUEST_LOG ? '已启用' : '已禁用'}`);
+
+    // 如果启用ngrok
+    if (enableNgrok) {
+      const ngrok = require("ngrok");
+      const authtoken = process.env.NGROK_AUTHTOKEN;
+      
+      if (!authtoken) {
+        console.warn("警告: 未设置 NGROK_AUTHTOKEN 环境变量，ngrok 可能无法正常工作");
+        console.warn("请设置环境变量: set NGROK_AUTHTOKEN=你的token");
+      } else {
+        try {
+          await ngrok.authtoken(authtoken);
+          const url = await ngrok.connect(PORT);
+          console.log(`\n公网访问地址: ${url}`);
+          console.log("ngrok 已启动，服务已暴露到公网\n");
+        } catch (err) {
+          console.error("ngrok 启动失败:", err.message);
+          console.log("服务已启动，但未启用 ngrok");
+        }
+      }
+    } else {
+      console.log("服务已启动（未启用 ngrok）");
+    }
+    
+    // 启动定时任务
+    console.log("\n[定时任务] 已启动以下定时任务:");
+    console.log("  - 内存监控: 每5分钟检查一次");
+    console.log("  - 消息清理: 每小时执行一次");
+    console.log("  - 健康检查: 每3分钟执行一次\n");
+    
+    // 启动内存监控
+    checkMemoryUsage();
+    
+    // 启动消息自动清理（延迟1分钟后首次执行，避免启动时立即清理）
+    setTimeout(cleanupOldMessages, 60 * 1000);
+    
+    // 启动健康检查（延迟30秒后首次执行）
+    setTimeout(performHealthCheck, 30 * 1000);
+  });
+}
+
+main().catch((err) => {
+  console.error("服务启动失败:", err);
+  process.exit(1);
 });
 
 const rl = readline.createInterface({

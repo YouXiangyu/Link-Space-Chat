@@ -41,11 +41,16 @@ function initializeDatabase() {
   });
 }
 
-// 初始化数据库
-initializeDatabase().catch(err => {
-  console.error("数据库初始化失败:", err);
-  process.exit(1);
-});
+// 初始化与迁移准备（导出为 ready，供外部 await，防止迁移与写入竞态）
+const ready = (async () => {
+  try {
+    await initializeDatabase();
+    await migrateDatabase();
+  } catch (err) {
+    console.error("数据库初始化/迁移失败:", err);
+    process.exit(1);
+  }
+})();
 
 /**
  * 确保房间存在（若不存在则插入）
@@ -356,12 +361,8 @@ function checkConnection() {
   });
 }
 
-// 执行数据库迁移
-migrateDatabase().catch(err => {
-  console.error("数据库迁移失败:", err);
-});
-
 module.exports = { 
+  ready,
   ensureRoom, 
   getRoom,
   updateRoom,
