@@ -1,4 +1,4 @@
-// --- server.js (修改后，已移除 Ngrok) ---
+// --- server.js (支持 Ngrok 和消息频率限制) ---
 
 const express = require("express");
 const http = require("http");
@@ -34,6 +34,12 @@ app.get(["/", "/r/:roomId"], (_req, res) => {
 });
 
 const roomIdToUsers = new Map();
+
+// 消息频率限制：每个socket的消息发送时间记录
+const socketMessageTimes = new Map();
+// 频率限制配置：每3秒最多发送5条消息
+const RATE_LIMIT_WINDOW = 3000; // 3秒
+const RATE_LIMIT_MAX = 5; // 最多5条
 
 function getLanAddress() {
   const ifaces = os.networkInterfaces();
@@ -72,6 +78,15 @@ function removeUserFromRoom(socket, roomId) {
 io.on("connection", (socket) => {
   let joinedRoomId = null;
   let nickname = null;
+  
+  // 初始化消息时间记录
+  socketMessageTimes.set(socket.id, []);
+  
+  // 清理断开连接的socket记录
+  socket.on("disconnect", () => {
+    socketMessageTimes.delete(socket.id);
+    removeUserFromRoom(socket, joinedRoomId);
+  });
 
   socket.on("join_room", async (payload, ack) => {
     try {
@@ -136,11 +151,28 @@ io.on("connection", (socket) => {
   socket.on("chat_message", async (text, ack) => {
     try {
       if (!joinedRoomId || !nickname) return;
+      
+      // 消息频率限制检查
+      const now = Date.now();
+      const messageTimes = socketMessageTimes.get(socket.id) || [];
+      
+      // 清理超过时间窗口的旧记录
+      const recentTimes = messageTimes.filter(time => now - time < RATE_LIMIT_WINDOW);
+      
+      // 检查是否超过频率限制
+      if (recentTimes.length >= RATE_LIMIT_MAX) {
+        return ack({ ok: false, error: "rate_limit", message: "消息发送过于频繁，请稍后再试" });
+      }
+      
+      // 记录本次消息时间
+      recentTimes.push(now);
+      socketMessageTimes.set(socket.id, recentTimes);
+      
       const message = await db.saveMessage({
         roomId: joinedRoomId,
         nickname,
         text: String(text || ""),
-        createdAt: Date.now(),
+        createdAt: now,
       });
       io.to(joinedRoomId).emit("chat_message", message);
       ack({ ok: true });
@@ -149,20 +181,54 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("disconnect", () => {
-    removeUserFromRoom(socket, joinedRoomId);
-  });
 });
 
-const PORT = Number(process.argv[2] || process.env.LINK_SPACE_PORT || 3000);
+// 解析命令行参数
+const args = process.argv.slice(2);
+let PORT = Number(process.env.LINK_SPACE_PORT || 3000);
+let enableNgrok = false;
 
-server.listen(PORT, () => {
+// 检查参数：如果第一个参数是"ngrok"，启用ngrok；如果是数字，使用该端口
+if (args.length > 0) {
+  const firstArg = args[0].toLowerCase();
+  if (firstArg === "ngrok") {
+    enableNgrok = true;
+    // ngrok模式下，端口可以从第二个参数获取，或使用环境变量/默认值
+    if (args.length > 1 && !isNaN(Number(args[1]))) {
+      PORT = Number(args[1]);
+    }
+  } else if (!isNaN(Number(firstArg))) {
+    PORT = Number(firstArg);
+  }
+}
+
+server.listen(PORT, async () => {
   console.log(`本地服务运行在 http://localhost:${PORT}`);
   const lan = getLanAddress();
   console.log(`局域网访问: http://${lan}:${PORT}`);
 
-  // ---- 这里是修改过的部分 ----
-  console.log("服务已启动，请通过宝塔面板设置的反向代理域名进行访问。");
+  // 如果启用ngrok
+  if (enableNgrok) {
+    const ngrok = require("ngrok");
+    const authtoken = process.env.NGROK_AUTHTOKEN;
+    
+    if (!authtoken) {
+      console.warn("警告: 未设置 NGROK_AUTHTOKEN 环境变量，ngrok 可能无法正常工作");
+      console.warn("请设置环境变量: set NGROK_AUTHTOKEN=你的token");
+    } else {
+      try {
+        await ngrok.authtoken(authtoken);
+        const url = await ngrok.connect(PORT);
+        console.log(`\n公网访问地址: ${url}`);
+        console.log("ngrok 已启动，服务已暴露到公网\n");
+      } catch (err) {
+        console.error("ngrok 启动失败:", err.message);
+        console.log("服务已启动，但未启用 ngrok");
+      }
+    }
+  } else {
+    console.log("服务已启动（未启用 ngrok）");
+  }
 });
 
 const rl = readline.createInterface({

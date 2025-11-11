@@ -5,31 +5,48 @@ chcp 65001 > nul
 setlocal
 
 REM --- Configuration ---
-REM Arg 1: Port (default 3000)
-REM Arg 2: Any value to enable ngrok (e.g., "ngrok-on")
-set "CLI_PORT=%1"
-set "NGROK_FLAG=%2"
-
-REM Set ENABLE_NGROK environment variable if the second argument exists
-if defined NGROK_FLAG (
-    set "ENABLE_NGROK=true"
-)
+REM Arg 1: "ngrok" to enable ngrok, or a port number (default 3000)
+REM Arg 2: Port number (only used when Arg 1 is "ngrok")
+set "ARG1=%1"
+set "ARG2=%2"
 
 REM --- Execution ---
 echo.
 echo Starting server...
-if defined ENABLE_NGROK (
+if "%ARG1%"=="ngrok" (
     echo Ngrok is ENABLED. A public URL will be generated.
+    if defined ARG2 (
+        echo Using port: %ARG2%
+    ) else (
+        echo Using default port: 3000
+    )
+    echo.
+    echo =================================================================
+    echo To STOP the server, press CTRL+C in this window.
+    echo =================================================================
+    echo.
+    if defined ARG2 (
+        node server.js ngrok %ARG2%
+    ) else (
+        node server.js ngrok
+    )
 ) else (
     echo Ngrok is DISABLED.
+    if defined ARG1 (
+        echo Using port: %ARG1%
+    ) else (
+        echo Using default port: 3000
+    )
+    echo.
+    echo =================================================================
+    echo To STOP the server, press CTRL+C in this window.
+    echo =================================================================
+    echo.
+    if defined ARG1 (
+        node server.js %ARG1%
+    ) else (
+        node server.js
+    )
 )
-echo.
-echo =================================================================
-echo To STOP the server, press CTRL+C in this window.
-echo =================================================================
-echo.
-
-REM Run the server in the current window, passing the port argument
-node server.js %CLI_PORT%
 
 endlocal

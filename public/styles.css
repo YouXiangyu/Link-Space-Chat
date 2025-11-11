@@ -258,10 +258,35 @@ input, button { font-size: 1rem; }
   line-height: 1.6;
 }
 
-.message-form { flex-shrink: 0; display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid #1b2a4a; }
+.message-form { flex-shrink: 0; display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid #1b2a4a; position: relative; }
 .message-form input { flex-grow: 1; background: #0f192f; border: 1px solid #1b2a4a; color: #e6eaf2; border-radius: 8px; padding: 12px; }
 .message-form button { background: #3358ff; color: white; border: none; padding: 12px 16px; border-radius: 8px; cursor: pointer; transition: background-color 0.2s; }
 .message-form button:hover { background: #2746d8; }
+
+/* Rate Limit Toast */
+.rate-limit-toast {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: rgba(255, 152, 0, 0.95);
+  color: #0b1220;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  z-index: 1500;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.rate-limit-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+  pointer-events: auto;
+}
 
 /* --- DESKTOP: Default state is sidebar open --- */
 @media (min-width: 769px) {

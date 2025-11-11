@@ -23,6 +23,7 @@
   const qrCodeContainer = el("qrCode");
   const shareLinkInput = el("shareLinkInput");
   const copyLinkBtn = el("copyLinkBtn");
+  const rateLimitToast = el("rateLimitToast");
 
   function getRoomIdFromPath() {
     const m = location.pathname.match(/^\/r\/([^\/?#]+)/);
@@ -45,6 +46,13 @@
     li.textContent = nickname ? `[${time}] ${nickname}: ${text}` : text;
     messages.appendChild(li);
     messages.scrollTop = messages.scrollHeight;
+  }
+
+  function showRateLimitToast() {
+    rateLimitToast.classList.add("show");
+    setTimeout(() => {
+      rateLimitToast.classList.remove("show");
+    }, 3000); // 3秒后自动隐藏
   }
 
   function renderUsers(users) {
@@ -127,7 +135,13 @@
     const text = messageInput.value.trim();
     if (!text) return;
     socket.emit("chat_message", text, (resp) => {
-      if (!resp?.ok) console.error(resp?.error);
+      if (!resp?.ok) {
+        if (resp?.error === "rate_limit") {
+          showRateLimitToast();
+        } else {
+          console.error(resp?.error || resp?.message);
+        }
+      }
     });
     messageInput.value = "";
   });
