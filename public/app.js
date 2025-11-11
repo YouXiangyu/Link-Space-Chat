@@ -397,7 +397,9 @@
   });
 
   // Phase 2: Edit Room Modal Logic
-  editRoomBtn.addEventListener("click", () => {
+  editRoomBtn.addEventListener("click", (e) => {
+    // 避免触发父级 roomInfo 的点击，防止误弹“房间信息”面板
+    e.stopPropagation();
     if (!currentRoom) return;
     editRoomName.value = currentRoom.name || "";
     editRoomDescription.value = currentRoom.description || "";
