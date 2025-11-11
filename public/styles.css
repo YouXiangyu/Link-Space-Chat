@@ -53,6 +53,26 @@ html, body {
   letter-spacing: 0.3px;
 }
 
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.topbar-roominfo-btn {
+  background: #1b2a4a;
+  color: #9fb3c8;
+  border: 1px solid #2a3f6a;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.topbar-roominfo-btn:hover {
+  background: #24385f;
+  color: #e6eaf2;
+}
+
 .room-id {
   color: #9fb3c8;
   font-size: 12px;
@@ -514,6 +534,15 @@ input, button { font-size: 1rem; }
   line-height: 1.4;
 }
 
+.form-warning {
+  background: rgba(255, 193, 7, 0.1);
+  color: #ffda6a;
+  border: 1px solid rgba(255, 193, 7, 0.3);
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+}
+
 .form-actions {
   display: flex;
   gap: 8px;
@@ -559,6 +588,44 @@ input, button { font-size: 1rem; }
   margin: 0 0 16px 0;
   color: #9fb3c8;
   font-size: 14px;
+}
+
+.readonly-field {
+  text-align: left;
+  background: #0f192f;
+  border: 1px solid #1b2a4a;
+  color: #e6eaf2;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  word-break: break-word;
+}
+
+.password-visibility {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.readonly-input {
+  flex: 1;
+  background: #0f192f;
+  border: 1px solid #1b2a4a;
+  color: #e6eaf2;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+.icon-btn {
+  background: #1b2a4a;
+  color: #9fb3c8;
+  border: 1px solid #2a3f6a;
+  border-radius: 8px;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+.icon-btn:hover {
+  background: #24385f;
+  color: #e6eaf2;
 }
 
 /* Phase 2: Input Enhancement */

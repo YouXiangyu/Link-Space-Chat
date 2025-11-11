@@ -378,7 +378,7 @@ io.on("connection", (socket) => {
     nickname = null;
   });
 
-  socket.on("chat_message", async (text, ack) => {
+  socket.on("chat_message", async (payload, ack) => {
     try {
       if (!joinedRoomId || !nickname) return;
       
@@ -398,8 +398,12 @@ io.on("connection", (socket) => {
       recentTimes.push(now);
       socketMessageTimes.set(socket.id, recentTimes);
       
+      // Phase 2: 支持对象payload并透传clientId
+      const incoming = typeof payload === 'string' ? { text: payload } : (payload || {});
+      const textStr = String(incoming.text || "");
+      const clientId = incoming.clientId || null;
+
       // Phase 2: 检测消息类型
-      const textStr = String(text || "");
       const contentType = detectContentType(textStr);
       
       const message = await db.saveMessage({
@@ -409,7 +413,9 @@ io.on("connection", (socket) => {
         createdAt: now,
         contentType: contentType
       });
-      io.to(joinedRoomId).emit("chat_message", message);
+      // 将clientId一并回传用于前端平滑替换
+      const out = clientId ? { ...message, clientId } : message;
+      io.to(joinedRoomId).emit("chat_message", out);
       ack({ ok: true });
     } catch (e) {
       ack({ ok: false, error: 'SEND_MESSAGE_ERROR', message: String(e) });

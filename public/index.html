@@ -16,7 +16,10 @@
         <button id="sidebarToggleBtn" class="sidebar-toggle-btn">&#9776;</button>
         <div class="brand">Link Space Chat</div>
       </div>
-      <div class="room-id" id="roomIdLabel"></div>
+      <div class="topbar-right">
+        <button id="topbarRoomInfoBtn" class="topbar-roominfo-btn">房间信息</button>
+        <div class="room-id" id="roomIdLabel"></div>
+      </div>
     </header>
     <main class="container">
       <aside class="sidebar">
@@ -83,6 +86,7 @@
       <button id="closeEditModalBtn" class="modal-close-btn">&times;</button>
       <h3>编辑房间</h3>
       <form id="editRoomForm" class="edit-room-form">
+        <div class="form-warning">确认保存后，房间名称、描述与密码将不可改动。</div>
         <div class="form-group">
           <label>房间名称</label>
           <input type="text" id="editRoomName" placeholder="房间名称（可选）" maxlength="50" />
@@ -101,6 +105,30 @@
           <button type="button" id="cancelEditBtn">取消</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Room Info Modal (所有已加入用户可见) -->
+  <div id="roomInfoModal" class="modal-overlay">
+    <div class="modal-content">
+      <button id="closeRoomInfoModalBtn" class="modal-close-btn">&times;</button>
+      <h3>房间信息</h3>
+      <div class="form-group">
+        <label>名称</label>
+        <div id="infoRoomName" class="readonly-field"></div>
+      </div>
+      <div class="form-group">
+        <label>描述</label>
+        <div id="infoRoomDescription" class="readonly-field"></div>
+      </div>
+      <div class="form-group">
+        <label>密码</label>
+        <div class="password-visibility">
+          <input type="password" id="infoRoomPassword" class="readonly-input" readonly value="" />
+          <button id="togglePasswordVisibleBtn" type="button" class="icon-btn" aria-label="toggle password">👁</button>
+        </div>
+        <small>仅已加入本房间的用户可见。默认隐藏，点击小眼睛切换显隐。</small>
+      </div>
     </div>
   </div>
 

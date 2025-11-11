@@ -17,6 +17,7 @@
   const sidebarCloseBtn = el("sidebarCloseBtn");
   const leaveBtn = el("leaveBtn");
   const shareBtn = el("shareBtn");
+  const topbarRoomInfoBtn = el("topbarRoomInfoBtn");
 
   // Phase 2: Room info elements
   const roomInfo = el("roomInfo");
@@ -48,6 +49,14 @@
   const passwordInput = el("passwordInput");
   const cancelPasswordBtn = el("cancelPasswordBtn");
 
+  // Room Info modal (topbar)
+  const roomInfoModal = el("roomInfoModal");
+  const closeRoomInfoModalBtn = el("closeRoomInfoModalBtn");
+  const infoRoomName = el("infoRoomName");
+  const infoRoomDescription = el("infoRoomDescription");
+  const infoRoomPassword = el("infoRoomPassword");
+  const togglePasswordVisibleBtn = el("togglePasswordVisibleBtn");
+
   function getRoomIdFromPath() {
     const m = location.pathname.match(/^\/r\/([^\/?#]+)/);
     return m ? decodeURIComponent(m[1]) : "";
@@ -63,28 +72,35 @@
   leaveBtn.style.display = "none";
   shareBtn.style.display = "block";
 
-  // Phase 2: 相对时间显示
-  function formatRelativeTime(timestamp) {
-    if (!timestamp) return "";
-    const now = Date.now();
-    const diff = now - timestamp;
-    const seconds = Math.floor(diff / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const hours = Math.floor(minutes / 60);
-    const days = Math.floor(hours / 24);
-
-    if (seconds < 10) return "刚刚";
-    if (seconds < 60) return `${seconds}秒前`;
-    if (minutes < 60) return `${minutes}分钟前`;
-    if (hours < 24) return `${hours}小时前`;
-    if (days < 7) return `${days}天前`;
-    
-    return new Date(timestamp).toLocaleString("zh-CN", {
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit"
-    });
+  // Phase 2: 时间格式（绝对时间 + 悬浮相对时间）
+  function formatAbsoluteTime(ts) {
+    const d = new Date(ts);
+    const now = new Date();
+    const sameYear = d.getFullYear() === now.getFullYear();
+    const sameMonth = sameYear && d.getMonth() === now.getMonth();
+    const sameDay = sameMonth && d.getDate() === now.getDate();
+    const pad = (n) => String(n).padStart(2, "0");
+    if (sameDay) {
+      return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+    if (sameMonth) {
+      return `${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+    if (sameYear) {
+      return `${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+  function formatRelativeTime(ts) {
+    const diff = Math.floor((Date.now() - ts) / 1000);
+    if (diff < 10) return "刚刚";
+    if (diff < 60) return `${diff}秒前`;
+    const m = Math.floor(diff / 60);
+    if (m < 60) return `${m}分钟前`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h}小时前`;
+    const d = Math.floor(h / 24);
+    return `${d}天前`;
   }
 
   function showInitialGuidance() {
@@ -92,21 +108,25 @@
   }
 
   // Phase 2: 增强的消息显示（支持消息类型）
-  function appendMessage({ nickname, text, createdAt, contentType = 'text', id, status = 'sent' }) {
+  function appendMessage({ nickname, text, createdAt, contentType = 'text', id, status = 'sent', clientId }) {
     const li = document.createElement("li");
     li.className = `message message-${contentType}`;
     if (status === 'sending') {
       li.classList.add('message-sending');
     }
-
-    const timeStr = formatRelativeTime(createdAt);
+    if (clientId) {
+      li.dataset.clientId = clientId;
+    }
+    const timeStr = formatAbsoluteTime(createdAt);
     const timeEl = document.createElement("span");
     timeEl.className = "message-time";
     timeEl.textContent = timeStr;
+    timeEl.dataset.ts = String(createdAt);
+    timeEl.title = formatRelativeTime(createdAt);
 
     const nicknameEl = document.createElement("span");
     nicknameEl.className = "message-nickname";
-    nicknameEl.textContent = nickname || "";
+    nicknameEl.textContent = status === 'sending' ? "" : (nickname || "");
 
     const textEl = document.createElement("span");
     textEl.className = "message-text";
@@ -114,15 +134,15 @@
     // Phase 2: 根据消息类型渲染
     if (contentType === 'emoji') {
       textEl.className += " message-emoji";
-      textEl.textContent = text;
+      textEl.textContent = status === 'sending' ? "发送中…" : text;
     } else {
       // 普通文本，支持换行
-      textEl.innerHTML = text.replace(/\n/g, '<br>');
+      textEl.innerHTML = (status === 'sending' ? "发送中…" : text).replace(/\n/g, '<br>');
     }
 
     const content = document.createElement("div");
     content.className = "message-content";
-    if (nickname) {
+    if (nickname && status !== 'sending') {
       content.appendChild(nicknameEl);
       content.appendChild(document.createTextNode(": "));
     }
@@ -133,30 +153,22 @@
     wrapper.appendChild(timeEl);
     wrapper.appendChild(content);
 
-    if (status === 'sending') {
-      const statusEl = document.createElement("span");
-      statusEl.className = "message-status";
-      statusEl.textContent = "发送中...";
-      wrapper.appendChild(statusEl);
-    }
+    // 发送中不显示额外状态条，文本中直接显示“发送中…”
 
     li.appendChild(wrapper);
     li.dataset.messageId = id;
     messages.appendChild(li);
     messages.scrollTop = messages.scrollHeight;
-
-    // Phase 2: 更新发送状态
-    if (status === 'sending' && id) {
-      setTimeout(() => {
-        const msgEl = messages.querySelector(`[data-message-id="${id}"]`);
-        if (msgEl) {
-          msgEl.classList.remove('message-sending');
-          const statusEl = msgEl.querySelector('.message-status');
-          if (statusEl) statusEl.remove();
-        }
-      }, 1000);
-    }
   }
+
+  // 定时刷新悬浮相对时间（每60秒）
+  setInterval(() => {
+    const nodes = document.querySelectorAll(".message-time");
+    nodes.forEach((n) => {
+      const ts = Number(n.dataset.ts || 0);
+      if (ts) n.title = formatRelativeTime(ts);
+    });
+  }, 60000);
 
   function showRateLimitToast() {
     rateLimitToast.classList.add("show");
@@ -193,6 +205,11 @@
     // 显示/隐藏编辑按钮（只有创建者可见）
     isCreator = room.isCreator === true;
     editRoomBtn.style.display = isCreator ? "block" : "none";
+
+    // 顶栏房间信息面板数据
+    infoRoomName.textContent = room.name || room.id || "";
+    infoRoomDescription.textContent = room.description || "";
+    infoRoomPassword.value = room.password || "";
   }
 
   async function fetchHistory(roomId) {
@@ -314,16 +331,18 @@
     
     // Phase 2: 显示发送中状态
     const tempId = Date.now();
+    const clientId = `${tempId}-${Math.random().toString(36).slice(2, 8)}`;
     appendMessage({
-      nickname: nicknameInput.value.trim(),
+      nickname: "", // 发送中不显示昵称
       text: text,
       createdAt: Date.now(),
       contentType: 'text',
       id: tempId,
-      status: 'sending'
+      status: 'sending',
+      clientId
     });
     
-    socket.emit("chat_message", text, (resp) => {
+    socket.emit("chat_message", { text, clientId }, (resp) => {
       if (!resp?.ok) {
         // 移除发送中的消息
         const msgEl = messages.querySelector(`[data-message-id="${tempId}"]`);
@@ -415,6 +434,8 @@
       }
       editRoomModal.classList.remove("visible");
       updateRoomInfo(resp.room);
+      // 按业务规则：确认后不可再次修改（前端隐藏入口）
+      editRoomBtn.style.display = "none";
     });
   });
 
@@ -427,7 +448,16 @@
     for (const m of list) appendMessage(m);
   });
 
-  socket.on("chat_message", (m) => appendMessage(m));
+  socket.on("chat_message", (m) => {
+    // 如果是自己发送的临时消息，用clientId平滑替换
+    if (m?.clientId) {
+      const tmp = document.querySelector(`li[data-client-id="${m.clientId}"]`);
+      if (tmp) {
+        tmp.remove();
+      }
+    }
+    appendMessage(m);
+  });
 
   socket.on("room_users", (users) => renderUsers(users));
 
@@ -463,6 +493,27 @@
     if (joined) {
       e.preventDefault();
       e.returnValue = "您确定要离开聊天室吗？您的连接将会断开。";
+    }
+  });
+
+  // 顶栏房间信息入口
+  topbarRoomInfoBtn.addEventListener("click", () => {
+    if (!currentRoom) return;
+    roomInfoModal.classList.add("visible");
+    // 默认隐藏密码
+    infoRoomPassword.type = "password";
+  });
+  closeRoomInfoModalBtn.addEventListener("click", () => {
+    roomInfoModal.classList.remove("visible");
+  });
+  roomInfoModal.addEventListener("click", (e) => {
+    if (e.target === roomInfoModal) roomInfoModal.classList.remove("visible");
+  });
+  togglePasswordVisibleBtn.addEventListener("click", () => {
+    if (infoRoomPassword.type === "password") {
+      infoRoomPassword.type = "text";
+    } else {
+      infoRoomPassword.type = "password";
     }
   });
   
