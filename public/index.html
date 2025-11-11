@@ -23,6 +23,15 @@
         <div class="sidebar-content">
           <button id="sidebarCloseBtn" class="sidebar-close-btn">&times;</button>
           <div class="section">
+            <div class="section-title">房间信息</div>
+            <div id="roomInfo" class="room-info">
+              <div id="roomName" class="room-name"></div>
+              <div id="roomDescription" class="room-description"></div>
+              <div id="roomPasswordStatus" class="room-password-status"></div>
+              <button id="editRoomBtn" class="edit-room-btn" style="display: none;">编辑房间</button>
+            </div>
+          </div>
+          <div class="section">
             <div class="section-title">在线用户</div>
             <ul id="userList" class="user-list"></ul>
           </div>
@@ -31,6 +40,7 @@
             <form id="joinForm" class="join-form">
               <input id="nickname" placeholder="昵称" maxlength="24" />
               <input id="roomIdInput" placeholder="房间ID（留空使用URL）" maxlength="40" />
+              <input id="roomPasswordInput" type="password" placeholder="房间密码（如有）" maxlength="20" style="display: none;" />
               <button type="submit">进入</button>
             </form>
           </div>
@@ -64,6 +74,48 @@
         <input type="text" id="shareLinkInput" readonly />
         <button id="copyLinkBtn">复制</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Edit Room Modal -->
+  <div id="editRoomModal" class="modal-overlay">
+    <div class="modal-content">
+      <button id="closeEditModalBtn" class="modal-close-btn">&times;</button>
+      <h3>编辑房间</h3>
+      <form id="editRoomForm" class="edit-room-form">
+        <div class="form-group">
+          <label>房间名称</label>
+          <input type="text" id="editRoomName" placeholder="房间名称（可选）" maxlength="50" />
+        </div>
+        <div class="form-group">
+          <label>房间描述</label>
+          <textarea id="editRoomDescription" placeholder="房间描述（可选）" maxlength="200" rows="3"></textarea>
+        </div>
+        <div class="form-group">
+          <label>房间密码</label>
+          <input type="password" id="editRoomPassword" placeholder="留空表示开放房间" maxlength="20" />
+          <small>设置密码后，只有知道密码的用户才能加入。默认房间（ID为"1"）不能设置密码。</small>
+        </div>
+        <div class="form-actions">
+          <button type="submit">保存</button>
+          <button type="button" id="cancelEditBtn">取消</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Password Modal -->
+  <div id="passwordModal" class="modal-overlay">
+    <div class="modal-content">
+      <h3>需要密码</h3>
+      <p>该房间需要密码才能加入</p>
+      <form id="passwordForm" class="password-form">
+        <input type="password" id="passwordInput" placeholder="请输入房间密码" maxlength="20" autofocus />
+        <div class="form-actions">
+          <button type="submit">确认</button>
+          <button type="button" id="cancelPasswordBtn">取消</button>
+        </div>
+      </form>
     </div>
   </div>
 
