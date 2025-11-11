@@ -292,7 +292,8 @@ io.on("connection", (socket) => {
   // 清理断开连接的socket记录
   socket.on("disconnect", () => {
     socketMessageTimes.delete(socket.id);
-    removeUserFromRoom(socket, joinedRoomId);
+    // 选择C：空房立即重置，断开时立即清理用户与房间
+    removeUserFromRoomImmediate(socket, joinedRoomId);
   });
 
   socket.on("join_room", async (payload, ack) => {
@@ -336,7 +337,8 @@ io.on("connection", (socket) => {
           if (isAlive) {
             return ack({ ok: false, error: "该昵称已被占用" });
           } else {
-            removeUserFromRoom(oldSocket, roomId);
+            // 选择C：立即清理旧连接，避免残留
+            removeUserFromRoomImmediate(oldSocket, roomId);
             oldSocket.disconnect(true);
           }
         }
