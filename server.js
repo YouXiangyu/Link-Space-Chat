@@ -306,16 +306,32 @@ io.on("connection", (socket) => {
         return ack({ ok: false, error: "roomId 和 nickname 必填" });
       }
 
-      // Phase 2: 检查房间密码
-      const room = await db.getRoom(roomId);
-      if (room && room.password) {
-        // 房间有密码，需要验证
-        if (!password || password !== room.password) {
-          return ack({ ok: false, error: "PASSWORD_REQUIRED", message: "该房间需要密码" });
+      // 获取当前内存中的房间在线用户映射
+      const usersMap = roomIdToUsers.get(roomId) || new Map();
+
+      // Phase 2: 检查房间密码（考虑“空房即重置”的业务规则）
+      let room = await db.getRoom(roomId);
+      if (room) {
+        // 如果房间存在且当前在线用户为0（包括服务重启后的空映射），按照业务约定重置房间状态
+        if (usersMap.size === 0 && (room.password || room.creatorSession)) {
+          // 清空消息 + 清空密码与创建者
+          if (typeof db.clearMessagesForRoom === 'function') {
+            await db.clearMessagesForRoom(roomId);
+          } else {
+            await db.clearHistoryForRoom(roomId);
+          }
+          await db.updateRoom(roomId, { password: null, creatorSession: null });
+          // 重新读取房间信息（已清空密码）
+          room = await db.getRoom(roomId);
+        }
+        // 若仍有密码（非空房情况），则按正常逻辑验证密码
+        if (room.password) {
+          if (!password || password !== room.password) {
+            return ack({ ok: false, error: "PASSWORD_REQUIRED", message: "该房间需要密码" });
+          }
         }
       }
 
-      const usersMap = roomIdToUsers.get(roomId) || new Map();
       let existingSocketId = null;
       for (const [socketId, nickname] of usersMap.entries()) {
         if (nickname === name) {
