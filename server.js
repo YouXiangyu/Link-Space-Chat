@@ -1,4 +1,4 @@
-// --- server.js (支持 Ngrok 和消息频率限制) ---
+// --- server.js (Phase 1: 性能优化与稳定性提升) ---
 
 const express = require("express");
 const http = require("http");
@@ -10,22 +10,154 @@ const db = require("./sqlite");
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+
+// Socket.IO 配置优化：启用心跳检测优化
+const io = new Server(server, {
+  pingTimeout: 60000,      // 60秒超时
+  pingInterval: 25000,     // 25秒心跳间隔
+  transports: ['websocket', 'polling'], // 支持 WebSocket 和轮询
+  allowEIO3: true          // 兼容旧版本客户端
+});
 
 app.use(express.json());
 app.use(express.static("public"));
 
-app.get("/health", (_req, res) => {
-  res.json({ ok: true });
+// ==================== 配置常量 ====================
+// 消息自动清理配置（可通过环境变量配置，默认1天）
+const MESSAGE_RETENTION_DAYS = Number(process.env.MESSAGE_RETENTION_DAYS || 1);
+// 房间和用户列表清理延迟（断开连接后3分钟删除）
+const CLEANUP_DELAY = 3 * 60 * 1000; // 3分钟
+// 内存告警阈值（80%）
+const MEMORY_ALERT_THRESHOLD = 0.8;
+// 健康检查间隔（3分钟）
+const HEALTH_CHECK_INTERVAL = 3 * 60 * 1000;
+// 消息自动清理间隔（每小时执行一次）
+const MESSAGE_CLEANUP_INTERVAL = 60 * 60 * 1000;
+// 请求日志开关（可通过环境变量控制，默认关闭）
+const ENABLE_REQUEST_LOG = process.env.ENABLE_REQUEST_LOG === 'true';
+// 慢请求阈值（毫秒）
+const SLOW_REQUEST_THRESHOLD = 1000;
+
+// ==================== 错误处理统一格式 ====================
+/**
+ * 统一错误响应格式
+ * @param {Object} res - Express响应对象
+ * @param {number} statusCode - HTTP状态码
+ * @param {string} errorCode - 错误码
+ * @param {string} message - 错误消息
+ */
+function sendError(res, statusCode, errorCode, message) {
+  res.status(statusCode).json({
+    ok: false,
+    error: errorCode,
+    message: message
+  });
+}
+
+// ==================== 请求日志中间件 ====================
+if (ENABLE_REQUEST_LOG) {
+  app.use((req, res, next) => {
+    const startTime = Date.now();
+    const originalEnd = res.end;
+    
+    res.end = function(...args) {
+      const duration = Date.now() - startTime;
+      const logLevel = duration > SLOW_REQUEST_THRESHOLD ? 'SLOW' : 'INFO';
+      console.log(`[${logLevel}] ${req.method} ${req.path} - ${duration}ms - ${res.statusCode}`);
+      originalEnd.apply(this, args);
+    };
+    
+    next();
+  });
+}
+
+// ==================== 性能监控中间件 ====================
+const slowRequests = [];
+
+app.use((req, res, next) => {
+  const startTime = Date.now();
+  const originalEnd = res.end;
+  
+  res.end = function(...args) {
+    const duration = Date.now() - startTime;
+    if (duration > SLOW_REQUEST_THRESHOLD) {
+      slowRequests.push({
+        method: req.method,
+        path: req.path,
+        duration: duration,
+        timestamp: Date.now()
+      });
+      // 只保留最近100条慢请求记录
+      if (slowRequests.length > 100) {
+        slowRequests.shift();
+      }
+    }
+    originalEnd.apply(this, args);
+  };
+  
+  next();
+});
+
+// ==================== 增强的健康检查端点 ====================
+app.get("/health", async (_req, res) => {
+  try {
+    const memUsage = process.memoryUsage();
+    const totalMem = os.totalmem();
+    const freeMem = os.freemem();
+    const usedMem = totalMem - freeMem;
+    const memUsagePercent = usedMem / totalMem;
+    
+    // 获取数据库统计信息
+    const dbStats = await db.getDatabaseStats();
+    
+    // 获取连接数
+    const connectionCount = io.sockets.sockets.size;
+    
+    // 检查数据库连接
+    const dbConnected = await db.checkConnection();
+    
+    res.json({
+      ok: true,
+      timestamp: Date.now(),
+      memory: {
+        used: Math.round(memUsage.heapUsed / 1024 / 1024), // MB
+        total: Math.round(memUsage.heapTotal / 1024 / 1024), // MB
+        external: Math.round(memUsage.external / 1024 / 1024), // MB
+        rss: Math.round(memUsage.rss / 1024 / 1024), // MB
+        systemTotal: Math.round(totalMem / 1024 / 1024), // MB
+        systemUsed: Math.round(usedMem / 1024 / 1024), // MB
+        systemFree: Math.round(freeMem / 1024 / 1024), // MB
+        usagePercent: Math.round(memUsagePercent * 100) / 100
+      },
+      connections: {
+        active: connectionCount,
+        rooms: roomIdToUsers.size
+      },
+      database: {
+        connected: dbConnected,
+        size: dbStats.dbSize,
+        messageCount: dbStats.messageCount,
+        roomCount: dbStats.roomCount,
+        oldestMessageTime: dbStats.oldestMessageTime
+      },
+      uptime: process.uptime(),
+      slowRequests: slowRequests.slice(-10) // 返回最近10条慢请求
+    });
+  } catch (e) {
+    sendError(res, 500, 'HEALTH_CHECK_ERROR', String(e));
+  }
 });
 
 app.get("/api/rooms/:roomId/messages", async (req, res) => {
   try {
     const limit = Number(req.query.limit || 20);
+    if (limit < 1 || limit > 100) {
+      return sendError(res, 400, 'INVALID_LIMIT', 'limit 必须在 1-100 之间');
+    }
     const messages = await db.getRecentMessages(req.params.roomId, limit);
-    res.json({ messages });
+    res.json({ ok: true, messages });
   } catch (e) {
-    res.status(500).json({ error: String(e) });
+    sendError(res, 500, 'FETCH_MESSAGES_ERROR', String(e));
   }
 });
 
@@ -33,13 +165,19 @@ app.get(["/", "/r/:roomId"], (_req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
+// ==================== 内存数据结构 ====================
 const roomIdToUsers = new Map();
 
-// 消息频率限制：每个socket的消息发送时间记录
+// 消息频率限制：使用 Map 存储每个 socket 的消息时间记录（已优化）
+// 数据结构：Map<socketId, Array<timestamp>>
 const socketMessageTimes = new Map();
 // 频率限制配置：每3秒最多发送5条消息
 const RATE_LIMIT_WINDOW = 3000; // 3秒
 const RATE_LIMIT_MAX = 5; // 最多5条
+
+// 延迟清理任务：存储需要延迟清理的房间和用户信息
+// 数据结构：Map<socketId, { roomId, timeout }>
+const delayedCleanupTasks = new Map();
 
 function getLanAddress() {
   const ifaces = os.networkInterfaces();
@@ -59,7 +197,12 @@ function emitRoomUsers(roomId) {
   io.to(roomId).emit("room_users", users);
 }
 
-function removeUserFromRoom(socket, roomId) {
+/**
+ * 立即从房间移除用户（不延迟）
+ * @param {Object} socket - Socket.IO socket对象
+ * @param {string} roomId - 房间ID
+ */
+function removeUserFromRoomImmediate(socket, roomId) {
   if (!roomId) return;
   const usersMap = roomIdToUsers.get(roomId);
   if (usersMap && usersMap.has(socket.id)) {
@@ -75,12 +218,44 @@ function removeUserFromRoom(socket, roomId) {
   }
 }
 
+/**
+ * 延迟清理用户（断开连接后延迟3分钟删除，避免频繁创建）
+ * @param {Object} socket - Socket.IO socket对象
+ * @param {string} roomId - 房间ID
+ */
+function removeUserFromRoom(socket, roomId) {
+  if (!roomId) return;
+  
+  // 取消之前的清理任务（如果用户重新连接）
+  const existingTask = delayedCleanupTasks.get(socket.id);
+  if (existingTask) {
+    clearTimeout(existingTask.timeout);
+    delayedCleanupTasks.delete(socket.id);
+    return; // 用户重新连接，不执行清理
+  }
+  
+  // 设置延迟清理任务
+  const timeout = setTimeout(() => {
+    removeUserFromRoomImmediate(socket, roomId);
+    delayedCleanupTasks.delete(socket.id);
+  }, CLEANUP_DELAY);
+  
+  delayedCleanupTasks.set(socket.id, { roomId, timeout });
+}
+
 io.on("connection", (socket) => {
   let joinedRoomId = null;
   let nickname = null;
   
   // 初始化消息时间记录
   socketMessageTimes.set(socket.id, []);
+  
+  // 如果用户重新连接，取消延迟清理任务
+  const existingTask = delayedCleanupTasks.get(socket.id);
+  if (existingTask) {
+    clearTimeout(existingTask.timeout);
+    delayedCleanupTasks.delete(socket.id);
+  }
   
   // 清理断开连接的socket记录
   socket.on("disconnect", () => {
@@ -129,6 +304,13 @@ io.on("connection", (socket) => {
       joinedRoomId = roomId;
       nickname = name;
 
+      // 如果用户重新连接，取消之前的清理任务
+      const existingTask = delayedCleanupTasks.get(socket.id);
+      if (existingTask) {
+        clearTimeout(existingTask.timeout);
+        delayedCleanupTasks.delete(socket.id);
+      }
+
       const newUsersMap = roomIdToUsers.get(roomId) || new Map();
       newUsersMap.set(socket.id, nickname);
       roomIdToUsers.set(roomId, newUsersMap);
@@ -138,12 +320,13 @@ io.on("connection", (socket) => {
       emitRoomUsers(roomId);
       ack({ ok: true });
     } catch (e) {
-      ack({ ok: false, error: String(e) });
+      ack({ ok: false, error: 'JOIN_ROOM_ERROR', message: String(e) });
     }
   });
 
   socket.on("leave_room", () => {
-    removeUserFromRoom(socket, joinedRoomId);
+    // 主动离开房间时立即清理
+    removeUserFromRoomImmediate(socket, joinedRoomId);
     joinedRoomId = null;
     nickname = null;
   });
@@ -177,7 +360,7 @@ io.on("connection", (socket) => {
       io.to(joinedRoomId).emit("chat_message", message);
       ack({ ok: true });
     } catch (e) {
-      ack({ ok: false, error: String(e) });
+      ack({ ok: false, error: 'SEND_MESSAGE_ERROR', message: String(e) });
     }
   });
 
@@ -202,10 +385,69 @@ if (args.length > 0) {
   }
 }
 
+// ==================== 内存监控和告警 ====================
+/**
+ * 检查内存使用率并告警
+ */
+function checkMemoryUsage() {
+  const memUsage = process.memoryUsage();
+  const totalMem = os.totalmem();
+  const freeMem = os.freemem();
+  const usedMem = totalMem - freeMem;
+  const memUsagePercent = usedMem / totalMem;
+  
+  if (memUsagePercent > MEMORY_ALERT_THRESHOLD) {
+    console.warn(`[内存告警] 系统内存使用率: ${(memUsagePercent * 100).toFixed(2)}% (阈值: ${MEMORY_ALERT_THRESHOLD * 100}%)`);
+    console.warn(`[内存告警] 堆内存使用: ${Math.round(memUsage.heapUsed / 1024 / 1024)}MB / ${Math.round(memUsage.heapTotal / 1024 / 1024)}MB`);
+  }
+  
+  // 每5分钟检查一次内存
+  setTimeout(checkMemoryUsage, 5 * 60 * 1000);
+}
+
+// ==================== 消息自动清理定时任务 ====================
+/**
+ * 定期清理旧消息
+ */
+async function cleanupOldMessages() {
+  try {
+    const deletedCount = await db.cleanOldMessages(MESSAGE_RETENTION_DAYS);
+    if (deletedCount > 0) {
+      console.log(`[自动清理] 已清理 ${deletedCount} 条超过 ${MESSAGE_RETENTION_DAYS} 天的消息`);
+    }
+  } catch (err) {
+    console.error("[自动清理] 清理旧消息失败:", err);
+  }
+  
+  // 每小时执行一次
+  setTimeout(cleanupOldMessages, MESSAGE_CLEANUP_INTERVAL);
+}
+
+// ==================== 健康检查定期自检 ====================
+/**
+ * 定期检查数据库连接
+ */
+async function performHealthCheck() {
+  try {
+    const dbConnected = await db.checkConnection();
+    if (!dbConnected) {
+      console.error("[健康检查] 数据库连接异常");
+    }
+  } catch (err) {
+    console.error("[健康检查] 健康检查失败:", err);
+  }
+  
+  // 每3分钟检查一次
+  setTimeout(performHealthCheck, HEALTH_CHECK_INTERVAL);
+}
+
+// ==================== 启动服务器 ====================
 server.listen(PORT, async () => {
   console.log(`本地服务运行在 http://localhost:${PORT}`);
   const lan = getLanAddress();
   console.log(`局域网访问: http://${lan}:${PORT}`);
+  console.log(`[配置] 消息保留天数: ${MESSAGE_RETENTION_DAYS} 天`);
+  console.log(`[配置] 请求日志: ${ENABLE_REQUEST_LOG ? '已启用' : '已禁用'}`);
 
   // 如果启用ngrok
   if (enableNgrok) {
@@ -229,6 +471,21 @@ server.listen(PORT, async () => {
   } else {
     console.log("服务已启动（未启用 ngrok）");
   }
+  
+  // 启动定时任务
+  console.log("\n[定时任务] 已启动以下定时任务:");
+  console.log("  - 内存监控: 每5分钟检查一次");
+  console.log("  - 消息清理: 每小时执行一次");
+  console.log("  - 健康检查: 每3分钟执行一次\n");
+  
+  // 启动内存监控
+  checkMemoryUsage();
+  
+  // 启动消息自动清理（延迟1分钟后首次执行，避免启动时立即清理）
+  setTimeout(cleanupOldMessages, 60 * 1000);
+  
+  // 启动健康检查（延迟30秒后首次执行）
+  setTimeout(performHealthCheck, 30 * 1000);
 });
 
 const rl = readline.createInterface({
