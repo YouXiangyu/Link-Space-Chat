@@ -41,6 +41,8 @@
   const editRoomName = el("editRoomName");
   const editRoomDescription = el("editRoomDescription");
   const editRoomPassword = el("editRoomPassword");
+  const editPasswordConfirmGroup = el("editPasswordConfirmGroup");
+  const editPasswordConfirm = el("editPasswordConfirm");
   const cancelEditBtn = el("cancelEditBtn");
 
   // Phase 2: Password modal
@@ -400,6 +402,14 @@
     editRoomName.value = currentRoom.name || "";
     editRoomDescription.value = currentRoom.description || "";
     editRoomPassword.value = ""; // 不显示现有密码
+    // 当已设置密码时，展示“修改密码并清空聊天记录”选项
+    if (currentRoom.password) {
+      editPasswordConfirmGroup.style.display = "block";
+      editPasswordConfirm.checked = false;
+    } else {
+      editPasswordConfirmGroup.style.display = "none";
+      editPasswordConfirm.checked = false;
+    }
     editRoomModal.classList.add("visible");
   });
 
@@ -421,11 +431,31 @@
     e.preventDefault();
     if (!joined) return;
     
-    const updates = {
-      name: editRoomName.value.trim() || null,
-      description: editRoomDescription.value.trim() || null,
-      password: editRoomPassword.value.trim() || null
-    };
+    const newName = editRoomName.value.trim() || null;
+    const newDesc = editRoomDescription.value.trim() || null;
+    const newPwdRaw = editRoomPassword.value.trim();
+
+    const updates = {};
+    updates.name = newName;
+    updates.description = newDesc;
+
+    // 只有当勾选了“修改密码并清空聊天记录”或房间原本没有密码时，才允许提交密码变更
+    const hadPassword = !!(currentRoom && currentRoom.password);
+    const wantsPwdChange = newPwdRaw.length > 0 || (hadPassword && newPwdRaw.length === 0); // 输入新密码或清空现有密码
+    if (hadPassword) {
+      if (wantsPwdChange && !editPasswordConfirm.checked) {
+        alert("请勾选“修改密码并清空聊天记录”以确认修改密码。");
+        return;
+      }
+      if (editPasswordConfirm.checked && wantsPwdChange) {
+        updates.password = newPwdRaw || null;
+      }
+    } else {
+      // 原本没有密码，允许直接设置或保持为空
+      if (wantsPwdChange) {
+        updates.password = newPwdRaw || null;
+      }
+    }
 
     socket.emit("update_room", updates, (resp) => {
       if (!resp?.ok) {
@@ -434,8 +464,7 @@
       }
       editRoomModal.classList.remove("visible");
       updateRoomInfo(resp.room);
-      // 按业务规则：确认后不可再次修改（前端隐藏入口）
-      editRoomBtn.style.display = "none";
+      // 不再隐藏编辑入口，允许后续修改密码（需勾选确认）
     });
   });
 
