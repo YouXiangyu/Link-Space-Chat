@@ -51,26 +51,7 @@ html, body {
 .brand {
   font-weight: 600;
   letter-spacing: 0.3px;
-}
-
-.topbar-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.topbar-roominfo-btn {
-  background: #1b2a4a;
-  color: #9fb3c8;
-  border: 1px solid #2a3f6a;
-  padding: 6px 10px;
-  border-radius: 8px;
   cursor: pointer;
-  font-size: 12px;
-}
-.topbar-roominfo-btn:hover {
-  background: #24385f;
-  color: #e6eaf2;
 }
 
 .room-id {

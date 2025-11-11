@@ -236,18 +236,25 @@ function clearHistoryForRoom(roomId) {
           return reject(err);
         }
       });
-      // Delete the room itself
-      db.run("DELETE FROM rooms WHERE id = ?", [roomId], function (err) {
-        if (err) {
-          db.run("ROLLBACK");
-          return reject(err);
-        }
-      });
       // Commit the transaction
       db.run("COMMIT", (err) => {
         if (err) return reject(err);
         resolve();
       });
+    });
+  });
+}
+
+/**
+ * 仅清空指定房间的消息（不删除房间）
+ * @param {string} roomId
+ * @returns {Promise<void>}
+ */
+function clearMessagesForRoom(roomId) {
+  return new Promise((resolve, reject) => {
+    db.run("DELETE FROM messages WHERE room_id = ?", [roomId], function (err) {
+      if (err) return reject(err);
+      resolve();
     });
   });
 }
@@ -361,6 +368,7 @@ module.exports = {
   saveMessage, 
   getRecentMessages, 
   clearHistoryForRoom, 
+  clearMessagesForRoom,
   clearAllData,
   cleanOldMessages,
   getDatabaseStats,

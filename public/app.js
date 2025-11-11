@@ -17,7 +17,7 @@
   const sidebarCloseBtn = el("sidebarCloseBtn");
   const leaveBtn = el("leaveBtn");
   const shareBtn = el("shareBtn");
-  const topbarRoomInfoBtn = el("topbarRoomInfoBtn");
+  const brandRoomInfoBtn = el("brandRoomInfoBtn");
 
   // Phase 2: Room info elements
   const roomInfo = el("roomInfo");
@@ -497,7 +497,7 @@
   });
 
   // 顶栏房间信息入口
-  topbarRoomInfoBtn.addEventListener("click", () => {
+  brandRoomInfoBtn.addEventListener("click", () => {
     if (!currentRoom) return;
     roomInfoModal.classList.add("visible");
     // 默认隐藏密码
@@ -515,6 +515,13 @@
     } else {
       infoRoomPassword.type = "password";
     }
+  });
+
+  // 侧栏“房间信息”卡片也可点击打开
+  roomInfo.addEventListener("click", () => {
+    if (!currentRoom) return;
+    roomInfoModal.classList.add("visible");
+    infoRoomPassword.type = "password";
   });
   
   // Initial setup

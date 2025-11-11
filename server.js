@@ -470,9 +470,14 @@ io.on("connection", (socket) => {
 
       await db.updateRoom(joinedRoomId, updates);
 
-      // 如果修改了密码，清空聊天记录并通知所有用户
+      // 如果修改了密码，仅清空该房间消息并通知所有用户（不删除房间，保留元数据与密码）
       if (payload.password !== undefined) {
-        await db.clearHistoryForRoom(joinedRoomId);
+        if (typeof db.clearMessagesForRoom === 'function') {
+          await db.clearMessagesForRoom(joinedRoomId);
+        } else {
+          // 兼容旧方法（将会删除房间，不推荐）
+          await db.clearHistoryForRoom(joinedRoomId);
+        }
         io.to(joinedRoomId).emit("room_refresh", { message: "房间密码已更改，聊天记录已清空" });
       }
 
