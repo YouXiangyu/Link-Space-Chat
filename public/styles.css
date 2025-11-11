@@ -419,7 +419,7 @@ input, button { font-size: 1rem; }
 }
 
 .messages li.message-emoji {
-  /* 与普通消息保持一致显示（不再高亮） */
+  /* 与普通消息保持一致显示（暂不额外高亮） */
   background: #0f192f;
   border-color: #1b2a4a;
 }
@@ -457,7 +457,7 @@ input, button { font-size: 1rem; }
 }
 
 .message-emoji {
-  /* 与普通文本一致 */
+  /* 与普通文本一致，后续可用于高亮文本样式 */
   font-size: inherit;
   line-height: inherit;
 }

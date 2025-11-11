@@ -181,18 +181,18 @@ const delayedCleanupTasks = new Map();
 
 // ==================== Phase 2: 消息类型检测 ====================
 /**
- * 检测消息类型（Emoji、URL等）
+ * 检测消息类型（高亮文本/Emoji、URL等）
  * @param {string} text - 消息文本
  * @returns {string} 消息类型：'emoji', 'text'
  */
 function detectContentType(text) {
   if (!text || typeof text !== 'string') return 'text';
   
-  // 检测是否为纯Emoji消息（只包含Emoji和空白字符）
+  // 检测是否可视为高亮文本（当前通过纯 Emoji 判断，只包含Emoji和空白字符）
   // Unicode Emoji范围：U+1F300-U+1F9FF, U+2600-U+26FF, U+2700-U+27BF, U+1F600-U+1F64F等
   const emojiRegex = /^[\s\p{Emoji_Presentation}\p{Emoji}\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}]+$/u;
   
-  // 如果消息只包含Emoji和空白字符，且至少有一个Emoji字符
+  // 如果消息只包含Emoji和空白字符，且至少有一个Emoji字符，则认为是高亮文本
   if (emojiRegex.test(text) && /[\p{Emoji_Presentation}\p{Emoji}]/u.test(text)) {
     return 'emoji';
   }
