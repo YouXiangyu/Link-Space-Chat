@@ -51,6 +51,7 @@ html, body {
 .brand {
   font-weight: 600;
   letter-spacing: 0.3px;
+  cursor: pointer;
 }
 
 .room-id {
@@ -342,5 +343,351 @@ input, button { font-size: 1rem; }
   .page.sidebar-open .container::after {
     opacity: 1;
     pointer-events: all;
+  }
+}
+
+/* Phase 2: Room Info Styles */
+.room-info {
+  padding: 12px;
+  background: #0f192f;
+  border-radius: 8px;
+  border: 1px solid #1b2a4a;
+}
+
+.room-name {
+  font-weight: 600;
+  font-size: 16px;
+  color: #e6eaf2;
+  margin-bottom: 8px;
+}
+
+.room-description {
+  font-size: 13px;
+  color: #9fb3c8;
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+.room-password-status {
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  display: inline-block;
+  margin-bottom: 8px;
+}
+
+.room-password-status.locked {
+  background: rgba(255, 152, 0, 0.2);
+  color: #ffb366;
+}
+
+.room-password-status.unlocked {
+  background: rgba(51, 88, 255, 0.2);
+  color: #7a9fff;
+}
+
+.edit-room-btn {
+  width: 100%;
+  background: #3358ff;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background-color 0.2s;
+  margin-top: 8px;
+}
+
+.edit-room-btn:hover {
+  background: #2746d8;
+}
+
+/* Phase 2: Enhanced Message Styles */
+.messages li.message {
+  background: #0f192f;
+  border: 1px solid #1b2a4a;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.messages li.message:hover {
+  background: #131d35;
+  border-color: #2a3f6a;
+}
+
+.messages li.message-emoji {
+  background: linear-gradient(135deg, #1a2a4a 0%, #0f192f 100%);
+  border-color: #3358ff;
+}
+
+.message-wrapper {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.message-time {
+  font-size: 11px;
+  color: #8aa0b8;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.message-content {
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.message-nickname {
+  font-weight: 600;
+  color: #7a9fff;
+  margin-right: 4px;
+}
+
+.message-text {
+  color: #e6eaf2;
+  word-wrap: break-word;
+  line-height: 1.5;
+  white-space: pre-wrap; /* 保留换行并防止XSS时主动插入HTML */
+}
+
+.message-emoji {
+  font-size: 24px;
+  line-height: 1.2;
+}
+
+.message-sending {
+  opacity: 0.7;
+}
+
+.message-status {
+  font-size: 11px;
+  color: #8aa0b8;
+  font-style: italic;
+  margin-left: auto;
+}
+
+/* Phase 2: Form Styles */
+.edit-room-form,
+.password-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group label {
+  font-size: 13px;
+  color: #9fb3c8;
+  font-weight: 500;
+}
+
+.form-group input,
+.form-group textarea {
+  background: #0f192f;
+  border: 1px solid #1b2a4a;
+  color: #e6eaf2;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #3358ff;
+  box-shadow: 0 0 0 3px rgba(51, 88, 255, 0.1);
+}
+
+.form-group small {
+  font-size: 11px;
+  color: #8aa0b8;
+  line-height: 1.4;
+}
+
+.form-warning {
+  background: rgba(255, 193, 7, 0.1);
+  color: #ffda6a;
+  border: 1px solid rgba(255, 193, 7, 0.3);
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.form-actions button {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.form-actions button[type="submit"] {
+  background: #3358ff;
+  color: white;
+}
+
+.form-actions button[type="submit"]:hover {
+  background: #2746d8;
+}
+
+.form-actions button[type="button"] {
+  background: #1b2a4a;
+  color: #9fb3c8;
+}
+
+.form-actions button[type="button"]:hover {
+  background: #2a3f6a;
+  color: #e6eaf2;
+}
+
+/* Phase 2: Modal Content Enhancement */
+.modal-content h3 {
+  margin: 0 0 20px 0;
+  color: #e6eaf2;
+  font-size: 20px;
+}
+
+.modal-content p {
+  margin: 0 0 16px 0;
+  color: #9fb3c8;
+  font-size: 14px;
+}
+
+.readonly-field {
+  text-align: left;
+  background: #0f192f;
+  border: 1px solid #1b2a4a;
+  color: #e6eaf2;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  word-break: break-word;
+}
+
+.password-visibility {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.readonly-input {
+  flex: 1;
+  background: #0f192f;
+  border: 1px solid #1b2a4a;
+  color: #e6eaf2;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+.icon-btn {
+  background: #1b2a4a;
+  color: #9fb3c8;
+  border: 1px solid #2a3f6a;
+  border-radius: 8px;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+.icon-btn:hover {
+  background: #24385f;
+  color: #e6eaf2;
+}
+
+/* Phase 2: Input Enhancement */
+.message-form input {
+  font-family: inherit;
+}
+
+.message-form input::placeholder {
+  color: #6b7f9a;
+}
+
+/* Phase 2: Scrollbar Styling */
+.messages::-webkit-scrollbar {
+  width: 8px;
+}
+
+.messages::-webkit-scrollbar-track {
+  background: #0b1220;
+}
+
+.messages::-webkit-scrollbar-thumb {
+  background: #1b2a4a;
+  border-radius: 4px;
+}
+
+.messages::-webkit-scrollbar-thumb:hover {
+  background: #2a3f6a;
+}
+
+.sidebar-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-content::-webkit-scrollbar-track {
+  background: #0e1526;
+}
+
+.sidebar-content::-webkit-scrollbar-thumb {
+  background: #1b2a4a;
+  border-radius: 3px;
+}
+
+.sidebar-content::-webkit-scrollbar-thumb:hover {
+  background: #2a3f6a;
+}
+
+/* Phase 2: Animation Enhancements */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.messages li.message {
+  animation: fadeIn 0.3s ease;
+}
+
+/* Phase 2: Responsive Improvements */
+@media (max-width: 768px) {
+  .message-wrapper {
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .message-time {
+    font-size: 10px;
+  }
+  
+  .room-info {
+    padding: 10px;
+  }
+  
+  .modal-content {
+    width: 95%;
+    max-width: none;
+    padding: 20px;
   }
 }

@@ -179,6 +179,27 @@ const RATE_LIMIT_MAX = 5; // 最多5条
 // 数据结构：Map<socketId, { roomId, timeout }>
 const delayedCleanupTasks = new Map();
 
+// ==================== Phase 2: 消息类型检测 ====================
+/**
+ * 检测消息类型（Emoji、URL等）
+ * @param {string} text - 消息文本
+ * @returns {string} 消息类型：'emoji', 'text'
+ */
+function detectContentType(text) {
+  if (!text || typeof text !== 'string') return 'text';
+  
+  // 检测是否为纯Emoji消息（只包含Emoji和空白字符）
+  // Unicode Emoji范围：U+1F300-U+1F9FF, U+2600-U+26FF, U+2700-U+27BF, U+1F600-U+1F64F等
+  const emojiRegex = /^[\s\p{Emoji_Presentation}\p{Emoji}\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}]+$/u;
+  
+  // 如果消息只包含Emoji和空白字符，且至少有一个Emoji字符
+  if (emojiRegex.test(text) && /[\p{Emoji_Presentation}\p{Emoji}]/u.test(text)) {
+    return 'emoji';
+  }
+  
+  return 'text';
+}
+
 function getLanAddress() {
   const ifaces = os.networkInterfaces();
   for (const name of Object.keys(ifaces)) {
@@ -267,8 +288,19 @@ io.on("connection", (socket) => {
     try {
       const roomId = String(payload?.roomId || "").trim();
       const name = String(payload?.nickname || "").trim();
+      const password = payload?.password || null; // Phase 2: 支持密码
+      
       if (!roomId || !name) {
         return ack({ ok: false, error: "roomId 和 nickname 必填" });
+      }
+
+      // Phase 2: 检查房间密码
+      const room = await db.getRoom(roomId);
+      if (room && room.password) {
+        // 房间有密码，需要验证
+        if (!password || password !== room.password) {
+          return ack({ ok: false, error: "PASSWORD_REQUIRED", message: "该房间需要密码" });
+        }
       }
 
       const usersMap = roomIdToUsers.get(roomId) || new Map();
@@ -287,7 +319,7 @@ io.on("connection", (socket) => {
         } else {
           const isAlive = await new Promise((resolve) => {
             oldSocket.timeout(2000).emit("server-ping", (err, pong) => {
-              resolve(!(err || !pong || pong[0] !== "ok"));
+              resolve(!err && pong === "ok");
             });
           });
           if (isAlive) {
@@ -299,7 +331,15 @@ io.on("connection", (socket) => {
         }
       }
 
-      await db.ensureRoom(roomId);
+      // Phase 2: 如果房间不存在，创建时记录创建者
+      const existingRoom = await db.getRoom(roomId);
+      if (!existingRoom) {
+        await db.ensureRoom(roomId, socket.id);
+      } else if (!existingRoom.creatorSession) {
+        // 如果房间存在但没有创建者，设置当前用户为创建者
+        await db.updateRoom(roomId, { creatorSession: socket.id });
+      }
+
       await socket.join(roomId);
       joinedRoomId = roomId;
       nickname = name;
@@ -316,7 +356,14 @@ io.on("connection", (socket) => {
       roomIdToUsers.set(roomId, newUsersMap);
 
       const history = await db.getRecentMessages(roomId, 20);
+      const roomInfo = await db.getRoom(roomId);
+      // Phase 2: 添加isCreator字段
+      const roomInfoWithCreator = roomInfo ? {
+        ...roomInfo,
+        isCreator: roomInfo.creatorSession === socket.id
+      } : { id: roomId, isCreator: false };
       socket.emit("history", history);
+      socket.emit("room_info", roomInfoWithCreator); // Phase 2: 发送房间信息
       emitRoomUsers(roomId);
       ack({ ok: true });
     } catch (e) {
@@ -331,7 +378,7 @@ io.on("connection", (socket) => {
     nickname = null;
   });
 
-  socket.on("chat_message", async (text, ack) => {
+  socket.on("chat_message", async (payload, ack) => {
     try {
       if (!joinedRoomId || !nickname) return;
       
@@ -351,16 +398,98 @@ io.on("connection", (socket) => {
       recentTimes.push(now);
       socketMessageTimes.set(socket.id, recentTimes);
       
+      // Phase 2: 支持对象payload并透传clientId
+      const incoming = typeof payload === 'string' ? { text: payload } : (payload || {});
+      const textStr = String(incoming.text || "");
+      const clientId = incoming.clientId || null;
+
+      // Phase 2: 检测消息类型
+      const contentType = detectContentType(textStr);
+      
       const message = await db.saveMessage({
         roomId: joinedRoomId,
         nickname,
-        text: String(text || ""),
+        text: textStr,
         createdAt: now,
+        contentType: contentType
       });
-      io.to(joinedRoomId).emit("chat_message", message);
+      // 将clientId一并回传用于前端平滑替换
+      const out = clientId ? { ...message, clientId } : message;
+      io.to(joinedRoomId).emit("chat_message", out);
       ack({ ok: true });
     } catch (e) {
       ack({ ok: false, error: 'SEND_MESSAGE_ERROR', message: String(e) });
+    }
+  });
+
+  // Phase 2: 房间信息管理事件
+  socket.on("get_room_info", async (payload, ack) => {
+    try {
+      if (!joinedRoomId) {
+        return ack({ ok: false, error: "未加入房间" });
+      }
+      const room = await db.getRoom(joinedRoomId);
+      const roomWithCreator = room ? {
+        ...room,
+        isCreator: room.creatorSession === socket.id
+      } : { id: joinedRoomId, isCreator: false };
+      ack({ ok: true, room: roomWithCreator });
+    } catch (e) {
+      ack({ ok: false, error: 'GET_ROOM_INFO_ERROR', message: String(e) });
+    }
+  });
+
+  socket.on("update_room", async (payload, ack) => {
+    try {
+      if (!joinedRoomId) {
+        return ack({ ok: false, error: "未加入房间" });
+      }
+
+      // 检查是否为默认房间（不能设置密码）
+      if (joinedRoomId === "1" && payload.password !== undefined && payload.password !== null) {
+        return ack({ ok: false, error: "默认房间不能设置密码" });
+      }
+
+      // 检查创建者权限
+      const room = await db.getRoom(joinedRoomId);
+      if (!room || room.creatorSession !== socket.id) {
+        return ack({ ok: false, error: "只有房间创建者可以修改房间信息" });
+      }
+
+      const updates = {};
+      if (payload.name !== undefined) {
+        updates.name = String(payload.name || "").trim() || null;
+      }
+      if (payload.description !== undefined) {
+        updates.description = String(payload.description || "").trim() || null;
+      }
+      if (payload.password !== undefined) {
+        const password = String(payload.password || "").trim();
+        updates.password = password || null; // 空字符串转为null（取消密码）
+      }
+
+      await db.updateRoom(joinedRoomId, updates);
+
+      // 如果修改了密码，仅清空该房间消息并通知所有用户（不删除房间，保留元数据与密码）
+      if (payload.password !== undefined) {
+        if (typeof db.clearMessagesForRoom === 'function') {
+          await db.clearMessagesForRoom(joinedRoomId);
+        } else {
+          // 兼容旧方法（将会删除房间，不推荐）
+          await db.clearHistoryForRoom(joinedRoomId);
+        }
+        io.to(joinedRoomId).emit("room_refresh", { message: "房间密码已更改，聊天记录已清空" });
+      }
+
+      const updatedRoom = await db.getRoom(joinedRoomId);
+      const roomWithCreator = updatedRoom ? {
+        ...updatedRoom,
+        isCreator: updatedRoom.creatorSession === socket.id
+      } : { id: joinedRoomId, isCreator: false };
+      io.to(joinedRoomId).emit("room_info", roomWithCreator);
+      ack({ ok: true, room: roomWithCreator });
+    } catch (e) {
+      ack({ ok: false, error: 'UPDATE_ROOM_ERROR', message: String(e) });
     }
   });
 
@@ -442,50 +571,62 @@ async function performHealthCheck() {
 }
 
 // ==================== 启动服务器 ====================
-server.listen(PORT, async () => {
-  console.log(`本地服务运行在 http://localhost:${PORT}`);
-  const lan = getLanAddress();
-  console.log(`局域网访问: http://${lan}:${PORT}`);
-  console.log(`[配置] 消息保留天数: ${MESSAGE_RETENTION_DAYS} 天`);
-  console.log(`[配置] 请求日志: ${ENABLE_REQUEST_LOG ? '已启用' : '已禁用'}`);
-
-  // 如果启用ngrok
-  if (enableNgrok) {
-    const ngrok = require("ngrok");
-    const authtoken = process.env.NGROK_AUTHTOKEN;
-    
-    if (!authtoken) {
-      console.warn("警告: 未设置 NGROK_AUTHTOKEN 环境变量，ngrok 可能无法正常工作");
-      console.warn("请设置环境变量: set NGROK_AUTHTOKEN=你的token");
-    } else {
-      try {
-        await ngrok.authtoken(authtoken);
-        const url = await ngrok.connect(PORT);
-        console.log(`\n公网访问地址: ${url}`);
-        console.log("ngrok 已启动，服务已暴露到公网\n");
-      } catch (err) {
-        console.error("ngrok 启动失败:", err.message);
-        console.log("服务已启动，但未启用 ngrok");
-      }
-    }
-  } else {
-    console.log("服务已启动（未启用 ngrok）");
+async function main() {
+  // 确保数据库初始化与迁移完成，避免写入竞态
+  if (db && typeof db.ready?.then === 'function') {
+    await db.ready;
   }
-  
-  // 启动定时任务
-  console.log("\n[定时任务] 已启动以下定时任务:");
-  console.log("  - 内存监控: 每5分钟检查一次");
-  console.log("  - 消息清理: 每小时执行一次");
-  console.log("  - 健康检查: 每3分钟执行一次\n");
-  
-  // 启动内存监控
-  checkMemoryUsage();
-  
-  // 启动消息自动清理（延迟1分钟后首次执行，避免启动时立即清理）
-  setTimeout(cleanupOldMessages, 60 * 1000);
-  
-  // 启动健康检查（延迟30秒后首次执行）
-  setTimeout(performHealthCheck, 30 * 1000);
+
+  server.listen(PORT, async () => {
+    console.log(`本地服务运行在 http://localhost:${PORT}`);
+    const lan = getLanAddress();
+    console.log(`局域网访问: http://${lan}:${PORT}`);
+    console.log(`[配置] 消息保留天数: ${MESSAGE_RETENTION_DAYS} 天`);
+    console.log(`[配置] 请求日志: ${ENABLE_REQUEST_LOG ? '已启用' : '已禁用'}`);
+
+    // 如果启用ngrok
+    if (enableNgrok) {
+      const ngrok = require("ngrok");
+      const authtoken = process.env.NGROK_AUTHTOKEN;
+      
+      if (!authtoken) {
+        console.warn("警告: 未设置 NGROK_AUTHTOKEN 环境变量，ngrok 可能无法正常工作");
+        console.warn("请设置环境变量: set NGROK_AUTHTOKEN=你的token");
+      } else {
+        try {
+          await ngrok.authtoken(authtoken);
+          const url = await ngrok.connect(PORT);
+          console.log(`\n公网访问地址: ${url}`);
+          console.log("ngrok 已启动，服务已暴露到公网\n");
+        } catch (err) {
+          console.error("ngrok 启动失败:", err.message);
+          console.log("服务已启动，但未启用 ngrok");
+        }
+      }
+    } else {
+      console.log("服务已启动（未启用 ngrok）");
+    }
+    
+    // 启动定时任务
+    console.log("\n[定时任务] 已启动以下定时任务:");
+    console.log("  - 内存监控: 每5分钟检查一次");
+    console.log("  - 消息清理: 每小时执行一次");
+    console.log("  - 健康检查: 每3分钟执行一次\n");
+    
+    // 启动内存监控
+    checkMemoryUsage();
+    
+    // 启动消息自动清理（延迟1分钟后首次执行，避免启动时立即清理）
+    setTimeout(cleanupOldMessages, 60 * 1000);
+    
+    // 启动健康检查（延迟30秒后首次执行）
+    setTimeout(performHealthCheck, 30 * 1000);
+  });
+}
+
+main().catch((err) => {
+  console.error("服务启动失败:", err);
+  process.exit(1);
 });
 
 const rl = readline.createInterface({

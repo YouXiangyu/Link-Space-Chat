@@ -41,22 +41,83 @@ function initializeDatabase() {
   });
 }
 
-// 初始化数据库
-initializeDatabase().catch(err => {
-  console.error("数据库初始化失败:", err);
-  process.exit(1);
-});
+// 初始化与迁移准备（导出为 ready，供外部 await，防止迁移与写入竞态）
+const ready = (async () => {
+  try {
+    await initializeDatabase();
+    await migrateDatabase();
+  } catch (err) {
+    console.error("数据库初始化/迁移失败:", err);
+    process.exit(1);
+  }
+})();
 
 /**
  * 确保房间存在（若不存在则插入）
  * @param {string} roomId - 房间ID
+ * @param {string} creatorSession - 创建者session ID（可选）
  * @returns {Promise<void>}
  */
-function ensureRoom(roomId) {
+function ensureRoom(roomId, creatorSession = null) {
   return new Promise((resolve, reject) => {
     db.run(
-      "INSERT OR IGNORE INTO rooms(id, created_at) VALUES(?, ?)",
-      [roomId, Date.now()],
+      "INSERT OR IGNORE INTO rooms(id, created_at, creator_session) VALUES(?, ?, ?)",
+      [roomId, Date.now(), creatorSession],
+      (err) => (err ? reject(err) : resolve())
+    );
+  });
+}
+
+/**
+ * 获取房间信息
+ * @param {string} roomId - 房间ID
+ * @returns {Promise<Object|null>} 房间信息对象
+ */
+function getRoom(roomId) {
+  return new Promise((resolve, reject) => {
+    db.get(
+      "SELECT id, name, description, password, creator_session as creatorSession, created_at as createdAt FROM rooms WHERE id = ?",
+      [roomId],
+      (err, row) => {
+        if (err) return reject(err);
+        resolve(row || null);
+      }
+    );
+  });
+}
+
+/**
+ * 更新房间信息
+ * @param {string} roomId - 房间ID
+ * @param {Object} updates - 要更新的字段
+ * @returns {Promise<void>}
+ */
+function updateRoom(roomId, updates) {
+  return new Promise((resolve, reject) => {
+    const fields = [];
+    const values = [];
+    
+    if (updates.name !== undefined) {
+      fields.push("name = ?");
+      values.push(updates.name);
+    }
+    if (updates.description !== undefined) {
+      fields.push("description = ?");
+      values.push(updates.description);
+    }
+    if (updates.password !== undefined) {
+      fields.push("password = ?");
+      values.push(updates.password);
+    }
+    
+    if (fields.length === 0) {
+      return resolve();
+    }
+    
+    values.push(roomId);
+    db.run(
+      `UPDATE rooms SET ${fields.join(", ")} WHERE id = ?`,
+      values,
       (err) => (err ? reject(err) : resolve())
     );
   });
@@ -69,16 +130,17 @@ function ensureRoom(roomId) {
  * @param {string} params.nickname - 昵称
  * @param {string} params.text - 消息内容
  * @param {number} params.createdAt - 创建时间戳
+ * @param {string} params.contentType - 消息类型（默认'text'）
  * @returns {Promise<Object>} 保存的消息对象
  */
-function saveMessage({ roomId, nickname, text, createdAt }) {
+function saveMessage({ roomId, nickname, text, createdAt, contentType = 'text' }) {
   return new Promise((resolve, reject) => {
     db.run(
-      "INSERT INTO messages(room_id, nickname, text, created_at) VALUES(?, ?, ?, ?)",
-      [roomId, nickname, text, createdAt],
+      "INSERT INTO messages(room_id, nickname, text, created_at, content_type) VALUES(?, ?, ?, ?, ?)",
+      [roomId, nickname, text, createdAt, contentType],
       function (err) {
         if (err) return reject(err);
-        resolve({ id: this.lastID, roomId, nickname, text, createdAt });
+        resolve({ id: this.lastID, roomId, nickname, text, createdAt, contentType });
       }
     );
   });
@@ -95,7 +157,7 @@ function getRecentMessages(roomId, limit = 20) {
   return new Promise((resolve, reject) => {
     // 只查询需要的字段，减少数据传输
     db.all(
-      "SELECT id, room_id as roomId, nickname, text, created_at as createdAt FROM messages WHERE room_id = ? ORDER BY created_at DESC LIMIT ?",
+      "SELECT id, room_id as roomId, nickname, text, created_at as createdAt, content_type as contentType FROM messages WHERE room_id = ? ORDER BY created_at DESC LIMIT ?",
       [roomId, limit],
       (err, rows) => {
         if (err) return reject(err);
@@ -179,18 +241,25 @@ function clearHistoryForRoom(roomId) {
           return reject(err);
         }
       });
-      // Delete the room itself
-      db.run("DELETE FROM rooms WHERE id = ?", [roomId], function (err) {
-        if (err) {
-          db.run("ROLLBACK");
-          return reject(err);
-        }
-      });
       // Commit the transaction
       db.run("COMMIT", (err) => {
         if (err) return reject(err);
         resolve();
       });
+    });
+  });
+}
+
+/**
+ * 仅清空指定房间的消息（不删除房间）
+ * @param {string} roomId
+ * @returns {Promise<void>}
+ */
+function clearMessagesForRoom(roomId) {
+  return new Promise((resolve, reject) => {
+    db.run("DELETE FROM messages WHERE room_id = ?", [roomId], function (err) {
+      if (err) return reject(err);
+      resolve();
     });
   });
 }
@@ -226,15 +295,45 @@ function clearAllData() {
 
 /**
  * 数据库迁移脚本
+ * Phase 2: 添加房间和消息的新字段
  * 使用 ALTER TABLE ADD COLUMN IF NOT EXISTS 确保向后兼容
  * @returns {Promise<void>}
  */
 function migrateDatabase() {
   return new Promise((resolve, reject) => {
     db.serialize(() => {
-      // 这里可以添加未来的数据库迁移逻辑
-      // 例如：ALTER TABLE rooms ADD COLUMN name TEXT
-      // 当前 Phase 1 不需要添加新字段，但保留此函数以便未来扩展
+      // Phase 2: 为 rooms 表添加新字段
+      db.run("ALTER TABLE rooms ADD COLUMN name TEXT", (err) => {
+        // 忽略"重复列"错误，因为字段可能已存在
+        if (err && !err.message.includes("duplicate column") && !err.message.includes("already exists")) {
+          console.warn("添加 rooms.name 字段时出现警告:", err.message);
+        }
+      });
+      
+      db.run("ALTER TABLE rooms ADD COLUMN description TEXT", (err) => {
+        if (err && !err.message.includes("duplicate column") && !err.message.includes("already exists")) {
+          console.warn("添加 rooms.description 字段时出现警告:", err.message);
+        }
+      });
+      
+      db.run("ALTER TABLE rooms ADD COLUMN password TEXT", (err) => {
+        if (err && !err.message.includes("duplicate column") && !err.message.includes("already exists")) {
+          console.warn("添加 rooms.password 字段时出现警告:", err.message);
+        }
+      });
+      
+      db.run("ALTER TABLE rooms ADD COLUMN creator_session TEXT", (err) => {
+        if (err && !err.message.includes("duplicate column") && !err.message.includes("already exists")) {
+          console.warn("添加 rooms.creator_session 字段时出现警告:", err.message);
+        }
+      });
+      
+      // Phase 2: 为 messages 表添加 content_type 字段
+      db.run("ALTER TABLE messages ADD COLUMN content_type TEXT DEFAULT 'text'", (err) => {
+        if (err && !err.message.includes("duplicate column") && !err.message.includes("already exists")) {
+          console.warn("添加 messages.content_type 字段时出现警告:", err.message);
+        }
+      });
       
       // 检查并优化索引（如果索引不存在或需要更新）
       db.run("CREATE INDEX IF NOT EXISTS idx_messages_room_time ON messages(room_id, created_at DESC)", (err) => {
@@ -262,16 +361,15 @@ function checkConnection() {
   });
 }
 
-// 执行数据库迁移
-migrateDatabase().catch(err => {
-  console.error("数据库迁移失败:", err);
-});
-
 module.exports = { 
+  ready,
   ensureRoom, 
+  getRoom,
+  updateRoom,
   saveMessage, 
   getRecentMessages, 
   clearHistoryForRoom, 
+  clearMessagesForRoom,
   clearAllData,
   cleanOldMessages,
   getDatabaseStats,
