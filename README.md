@@ -4,7 +4,7 @@
 
 **项目还在不断完善, 暂时没有完善mvp功能**
 
-**更新时间**: 2025年1月（Phase 2 轻量级功能增强已完成）
+**更新时间**: 2025年11月（Phase 2 轻量级功能增强已完成）
 ---
 
 ## 目录
@@ -37,8 +37,8 @@
 
 1.  **克隆仓库**
     ```bash
-    git clone https://github.com/your-username/my-chat.git
-    cd my-chat
+    git clone https://github.com/YouXiangyu/Link-Space-Chat.git
+    cd Link-Space-Chat
     ```
 
 2.  **安装依赖**
@@ -355,7 +355,7 @@ Phase 1 已完成，新增以下功能和优化：
 
 **性能影响**: ➡️ 轻微增加（<5%）
 
-**完成时间**: 2025年1月
+**完成时间**: 2025年11月
 
 #### Todo 清单
 
@@ -639,4 +639,4 @@ CREATE TABLE votes (
 
 ---
 
-**最后更新**: 2025年1月
+**最后更新**: 2025年11月
