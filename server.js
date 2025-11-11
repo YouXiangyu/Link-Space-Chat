@@ -230,9 +230,20 @@ function removeUserFromRoomImmediate(socket, roomId) {
     usersMap.delete(socket.id);
     if (usersMap.size === 0) {
       roomIdToUsers.delete(roomId);
-      db.clearHistoryForRoom(roomId)
-        .then(() => console.log(`History for empty room ${roomId} cleared.`))
-        .catch(err => console.error(`Failed to clear history for room ${roomId}:`, err));
+      // 房间无人后，重置房间：清空消息、置空密码与creator_session
+      (async () => {
+        try {
+          if (typeof db.clearMessagesForRoom === 'function') {
+            await db.clearMessagesForRoom(roomId);
+          } else {
+            await db.clearHistoryForRoom(roomId);
+          }
+          await db.updateRoom(roomId, { password: null, creatorSession: null });
+          console.log(`Room ${roomId} reset after empty: messages cleared, password and creator reset.`);
+        } catch (err) {
+          console.error(`Failed to reset empty room ${roomId}:`, err);
+        }
+      })();
     }
     emitRoomUsers(roomId);
     console.log(`User disconnected from room ${roomId}`);
