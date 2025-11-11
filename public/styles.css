@@ -419,8 +419,9 @@ input, button { font-size: 1rem; }
 }
 
 .messages li.message-emoji {
-  background: linear-gradient(135deg, #1a2a4a 0%, #0f192f 100%);
-  border-color: #3358ff;
+  /* 与普通消息保持一致显示（不再高亮） */
+  background: #0f192f;
+  border-color: #1b2a4a;
 }
 
 .message-wrapper {
@@ -456,8 +457,9 @@ input, button { font-size: 1rem; }
 }
 
 .message-emoji {
-  font-size: 24px;
-  line-height: 1.2;
+  /* 与普通文本一致 */
+  font-size: inherit;
+  line-height: inherit;
 }
 
 .message-sending {

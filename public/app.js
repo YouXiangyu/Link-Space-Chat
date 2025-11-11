@@ -112,7 +112,7 @@
   // Phase 2: 增强的消息显示（支持消息类型）
   function appendMessage({ nickname, text, createdAt, contentType = 'text', id, status = 'sent', clientId }) {
     const li = document.createElement("li");
-    li.className = `message message-${contentType}`;
+    li.className = `message`;
     if (status === 'sending') {
       li.classList.add('message-sending');
     }
@@ -134,13 +134,9 @@
     textEl.className = "message-text";
     
     // Phase 2: 根据消息类型渲染
-    if (contentType === 'emoji') {
-      textEl.className += " message-emoji";
-      textEl.textContent = status === 'sending' ? "发送中…" : text;
-    } else {
-      // 普通文本，使用 textContent 防止 XSS，换行由样式处理
-      textEl.textContent = (status === 'sending' ? "发送中…" : text);
-    }
+    // 现阶段：表情与普通文本统一显示
+    // 普通文本，使用 textContent 防止 XSS，换行由样式处理
+    textEl.textContent = (status === 'sending' ? "发送中…" : text);
 
     const content = document.createElement("div");
     content.className = "message-content";
