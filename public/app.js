@@ -41,6 +41,9 @@
   const searchInput = el("searchInput");
   const searchBtn = el("searchBtn");
   const searchResults = el("searchResults");
+  const moreToggleBtn = el("moreToggleBtn");
+  const moreToggleIcon = el("moreToggleIcon");
+  const morePanel = el("morePanel");
   
   // Phase 2: Edit room modal
   const editRoomModal = el("editRoomModal");
@@ -81,6 +84,17 @@
   // Phase 3: 消息Map和回复状态
   const messageMap = new Map(); // id -> message object
   let replyingTo = null; // 当前回复的消息对象 { id, nickname, text }
+  let morePanelOpen = false;
+
+  const setMorePanelState = (open) => {
+    morePanelOpen = open;
+    if (morePanel) {
+      morePanel.style.display = open ? "block" : "none";
+    }
+    if (moreToggleIcon) {
+      moreToggleIcon.classList.toggle("open", open);
+    }
+  };
 
   roomIdLabel.textContent = currentRoomId ? `房间：${currentRoomId}` : "未进入房间";
   leaveBtn.style.display = "none";
@@ -244,6 +258,23 @@
     replyBox.style.display = 'none';
   }
 
+  if (moreToggleBtn && morePanel) {
+    setMorePanelState(false);
+    moreToggleBtn.addEventListener("click", () => {
+      setMorePanelState(!morePanelOpen);
+    });
+  } else {
+    setMorePanelState(false);
+  }
+
+  if (searchInput) {
+    searchInput.addEventListener("focus", () => {
+      if (!morePanelOpen) {
+        setMorePanelState(true);
+      }
+    });
+  }
+
   // 定时刷新悬浮相对时间（每60秒）
   setInterval(() => {
     const nodes = document.querySelectorAll(".message-time");
@@ -320,6 +351,9 @@
     // Phase 3: 清空消息Map和回复状态
     messageMap.clear();
     cancelReply();
+    if (searchInput) searchInput.value = "";
+    if (searchResults) searchResults.style.display = 'none';
+    setMorePanelState(false);
   }
 
   // Phase 2: 加入房间（支持密码）
@@ -615,10 +649,14 @@
   
   // Phase 3: 搜索功能
   function performSearch() {
+    if (!searchInput || !searchResults) return;
     const query = searchInput.value.trim();
     if (!query || !joined) {
       searchResults.style.display = 'none';
       return;
+    }
+    if (!morePanelOpen) {
+      setMorePanelState(true);
     }
     
     // 搜索当前已加载的消息

@@ -33,15 +33,9 @@
           </div>
           <div class="section">
             <div class="section-title">在线用户</div>
-            <ul id="userList" class="user-list"></ul>
-          </div>
-          <div class="section">
-            <div class="section-title">搜索消息</div>
-            <div class="search-container">
-              <input type="text" id="searchInput" placeholder="🔍 搜索当前消息..." maxlength="100" />
-              <button id="searchBtn" class="search-btn" title="搜索">🔍</button>
+            <div class="section-card">
+              <ul id="userList" class="user-list"></ul>
             </div>
-            <div id="searchResults" class="search-results" style="display: none;"></div>
           </div>
           <div class="section">
             <div class="section-title">加入房间</div>
@@ -55,6 +49,22 @@
           <div class="section">
               <button id="shareBtn" class="share-btn">分享房间</button>
               <button id="leaveBtn" class="leave-btn">退出房间</button>
+          </div>
+          <div class="section more-section">
+            <button id="moreToggleBtn" class="more-toggle-btn">
+              <span>更多工具</span>
+              <span id="moreToggleIcon" class="more-toggle-icon">▾</span>
+            </button>
+            <div id="morePanel" class="more-panel" style="display: none;">
+              <div class="more-panel-section">
+                <div class="more-panel-title">消息工具</div>
+                <div class="search-container">
+                  <input type="text" id="searchInput" placeholder="🔍 搜索当前消息..." maxlength="100" />
+                  <button id="searchBtn" class="search-btn" title="搜索">🔍</button>
+                </div>
+                <div id="searchResults" class="search-results" style="display: none;"></div>
+              </div>
+            </div>
           </div>
         </div>
         <div class="sidebar-footer">
