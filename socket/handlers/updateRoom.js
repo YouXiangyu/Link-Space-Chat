@@ -1,6 +1,8 @@
 // --- socket/handlers/updateRoom.js ---
 // 更新房间信息事件处理器
 
+const { ErrorCodes, createErrorResponse, createSuccessResponse } = require("../../utils/errors");
+
 /**
  * 更新房间信息事件处理器
  * @param {Object} socket - Socket.IO socket对象
@@ -13,18 +15,18 @@ function updateRoomHandler(socket, socketState, { io, db }) {
   socket.on("update_room", async (payload, ack) => {
     try {
       if (!socketState.joinedRoomId) {
-        return ack({ ok: false, error: "未加入房间" });
+        return ack(createErrorResponse(ErrorCodes.NOT_IN_ROOM, "未加入房间"));
       }
 
       // 检查是否为默认房间（不能设置密码）
       if (socketState.joinedRoomId === "1" && payload.password !== undefined && payload.password !== null) {
-        return ack({ ok: false, error: "默认房间不能设置密码" });
+        return ack(createErrorResponse(ErrorCodes.DEFAULT_ROOM_NO_PASSWORD, "默认房间不能设置密码"));
       }
 
       // 检查创建者权限
       const room = await db.getRoom(socketState.joinedRoomId);
       if (!room || room.creatorSession !== socket.id) {
-        return ack({ ok: false, error: "只有房间创建者可以修改房间信息" });
+        return ack(createErrorResponse(ErrorCodes.NOT_CREATOR, "只有房间创建者可以修改房间信息"));
       }
 
       const updates = {};
@@ -58,9 +60,9 @@ function updateRoomHandler(socket, socketState, { io, db }) {
         isCreator: updatedRoom.creatorSession === socket.id
       } : { id: socketState.joinedRoomId, isCreator: false };
       io.to(socketState.joinedRoomId).emit("room_info", roomWithCreator);
-      ack({ ok: true, room: roomWithCreator });
+      ack(createSuccessResponse({ room: roomWithCreator }));
     } catch (e) {
-      ack({ ok: false, error: 'UPDATE_ROOM_ERROR', message: String(e) });
+      ack(createErrorResponse(ErrorCodes.UPDATE_ROOM_ERROR, String(e)));
     }
   });
 }

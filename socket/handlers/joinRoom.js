@@ -1,6 +1,8 @@
 // --- socket/handlers/joinRoom.js ---
 // 加入房间事件处理器
 
+const { ErrorCodes, createErrorResponse, createSuccessResponse } = require("../../utils/errors");
+
 /**
  * 加入房间事件处理器
  * @param {Object} socket - Socket.IO socket对象
@@ -19,7 +21,7 @@ function joinRoomHandler(socket, socketState, { io, roomState, messageService, d
       const password = payload?.password || null;
       
       if (!roomId || !name) {
-        return ack({ ok: false, error: "roomId 和 nickname 必填" });
+        return ack(createErrorResponse(ErrorCodes.INVALID_REQUEST, "roomId 和 nickname 必填"));
       }
 
       // 获取当前内存中的房间在线用户映射
@@ -44,7 +46,7 @@ function joinRoomHandler(socket, socketState, { io, roomState, messageService, d
         // 若仍有密码（非空房情况），则按正常逻辑验证密码
         if (room.password) {
           if (!password || password !== room.password) {
-            return ack({ ok: false, error: "PASSWORD_REQUIRED", message: "该房间需要密码" });
+            return ack(createErrorResponse(ErrorCodes.PASSWORD_REQUIRED, "该房间需要密码"));
           }
         }
       }
@@ -64,7 +66,7 @@ function joinRoomHandler(socket, socketState, { io, roomState, messageService, d
             });
           });
           if (isAlive) {
-            return ack({ ok: false, error: "该昵称已被占用" });
+            return ack(createErrorResponse(ErrorCodes.NICKNAME_TAKEN, "该昵称已被占用"));
           } else {
             // 选择C：立即清理旧连接，避免残留
             roomState.removeUserImmediate(oldSocket.id, roomId, db);
@@ -106,9 +108,9 @@ function joinRoomHandler(socket, socketState, { io, roomState, messageService, d
       const users = roomState.getUsers(roomId);
       io.to(roomId).emit("room_users", users);
       
-      ack({ ok: true });
+      ack(createSuccessResponse());
     } catch (e) {
-      ack({ ok: false, error: 'JOIN_ROOM_ERROR', message: String(e) });
+      ack(createErrorResponse(ErrorCodes.JOIN_ROOM_ERROR, String(e)));
     }
   });
 }

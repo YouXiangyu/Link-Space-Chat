@@ -86,45 +86,48 @@ function cleanOldMessages(db, days = 1) {
 }
 
 /**
- * 清理指定房间的历史记录
+ * 清空指定房间的消息
+ * @param {Object} db - SQLite数据库实例
+ * @param {string} roomId - 房间ID
+ * @param {boolean} useTransaction - 是否使用事务（默认false，直接删除更快）
+ * @returns {Promise<void>}
+ */
+function clearMessagesForRoom(db, roomId, useTransaction = false) {
+  return new Promise((resolve, reject) => {
+    if (useTransaction) {
+      // 使用事务模式（兼容旧代码）
+      db.serialize(() => {
+        db.run("BEGIN TRANSACTION");
+        db.run("DELETE FROM messages WHERE room_id = ?", [roomId], function (err) {
+          if (err) {
+            db.run("ROLLBACK");
+            return reject(err);
+          }
+        });
+        db.run("COMMIT", (err) => {
+          if (err) return reject(err);
+          resolve();
+        });
+      });
+    } else {
+      // 直接删除（更快，推荐）
+      db.run("DELETE FROM messages WHERE room_id = ?", [roomId], function (err) {
+        if (err) return reject(err);
+        resolve();
+      });
+    }
+  });
+}
+
+/**
+ * 清理指定房间的历史记录（已废弃，使用clearMessagesForRoom替代）
+ * @deprecated 使用 clearMessagesForRoom(db, roomId, true) 替代
  * @param {Object} db - SQLite数据库实例
  * @param {string} roomId - 房间ID
  * @returns {Promise<void>}
  */
 function clearHistoryForRoom(db, roomId) {
-  return new Promise((resolve, reject) => {
-    db.serialize(() => {
-      // Begin a transaction
-      db.run("BEGIN TRANSACTION");
-      // Delete messages for the given room
-      db.run("DELETE FROM messages WHERE room_id = ?", [roomId], function (err) {
-        if (err) {
-          db.run("ROLLBACK");
-          return reject(err);
-        }
-      });
-      // Commit the transaction
-      db.run("COMMIT", (err) => {
-        if (err) return reject(err);
-        resolve();
-      });
-    });
-  });
-}
-
-/**
- * 仅清空指定房间的消息（不删除房间）
- * @param {Object} db - SQLite数据库实例
- * @param {string} roomId
- * @returns {Promise<void>}
- */
-function clearMessagesForRoom(db, roomId) {
-  return new Promise((resolve, reject) => {
-    db.run("DELETE FROM messages WHERE room_id = ?", [roomId], function (err) {
-      if (err) return reject(err);
-      resolve();
-    });
-  });
+  return clearMessagesForRoom(db, roomId, true);
 }
 
 /**

@@ -1,6 +1,8 @@
 // --- socket/handlers/chatMessage.js ---
 // 聊天消息事件处理器
 
+const { ErrorCodes, createErrorResponse, createSuccessResponse } = require("../../utils/errors");
+
 /**
  * 聊天消息事件处理器
  * @param {Object} socket - Socket.IO socket对象
@@ -19,7 +21,7 @@ function chatMessageHandler(socket, socketState, { io, rateLimiter, messageServi
       // 消息频率限制检查
       const rateLimitResult = rateLimiter.checkRateLimit(socket.id);
       if (!rateLimitResult.allowed) {
-        return ack({ ok: false, error: "rate_limit", message: rateLimitResult.message });
+        return ack(createErrorResponse(ErrorCodes.RATE_LIMIT, rateLimitResult.message));
       }
       
       // Phase 2: 支持对象payload并透传clientId
@@ -45,9 +47,9 @@ function chatMessageHandler(socket, socketState, { io, rateLimiter, messageServi
       // 将clientId一并回传用于前端平滑替换
       const out = clientId ? { ...message, clientId } : message;
       io.to(socketState.joinedRoomId).emit("chat_message", out);
-      ack({ ok: true });
+      ack(createSuccessResponse());
     } catch (e) {
-      ack({ ok: false, error: 'SEND_MESSAGE_ERROR', message: String(e) });
+      ack(createErrorResponse(ErrorCodes.SEND_MESSAGE_ERROR, String(e)));
     }
   });
 }
