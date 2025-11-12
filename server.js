@@ -181,18 +181,18 @@ const delayedCleanupTasks = new Map();
 
 // ==================== Phase 2: 消息类型检测 ====================
 /**
- * 检测消息类型（Emoji、URL等）
+ * 检测消息类型（高亮文本/Emoji、URL等）
  * @param {string} text - 消息文本
  * @returns {string} 消息类型：'emoji', 'text'
  */
 function detectContentType(text) {
   if (!text || typeof text !== 'string') return 'text';
   
-  // 检测是否为纯Emoji消息（只包含Emoji和空白字符）
+  // 检测是否可视为高亮文本（当前通过纯 Emoji 判断，只包含Emoji和空白字符）
   // Unicode Emoji范围：U+1F300-U+1F9FF, U+2600-U+26FF, U+2700-U+27BF, U+1F600-U+1F64F等
   const emojiRegex = /^[\s\p{Emoji_Presentation}\p{Emoji}\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}]+$/u;
   
-  // 如果消息只包含Emoji和空白字符，且至少有一个Emoji字符
+  // 如果消息只包含Emoji和空白字符，且至少有一个Emoji字符，则认为是高亮文本
   if (emojiRegex.test(text) && /[\p{Emoji_Presentation}\p{Emoji}]/u.test(text)) {
     return 'emoji';
   }
@@ -230,9 +230,20 @@ function removeUserFromRoomImmediate(socket, roomId) {
     usersMap.delete(socket.id);
     if (usersMap.size === 0) {
       roomIdToUsers.delete(roomId);
-      db.clearHistoryForRoom(roomId)
-        .then(() => console.log(`History for empty room ${roomId} cleared.`))
-        .catch(err => console.error(`Failed to clear history for room ${roomId}:`, err));
+      // 房间无人后，重置房间：清空消息、置空密码与creator_session
+      (async () => {
+        try {
+          if (typeof db.clearMessagesForRoom === 'function') {
+            await db.clearMessagesForRoom(roomId);
+          } else {
+            await db.clearHistoryForRoom(roomId);
+          }
+          await db.updateRoom(roomId, { password: null, creatorSession: null });
+          console.log(`Room ${roomId} reset after empty: messages cleared, password and creator reset.`);
+        } catch (err) {
+          console.error(`Failed to reset empty room ${roomId}:`, err);
+        }
+      })();
     }
     emitRoomUsers(roomId);
     console.log(`User disconnected from room ${roomId}`);
@@ -281,7 +292,8 @@ io.on("connection", (socket) => {
   // 清理断开连接的socket记录
   socket.on("disconnect", () => {
     socketMessageTimes.delete(socket.id);
-    removeUserFromRoom(socket, joinedRoomId);
+    // 选择C：空房立即重置，断开时立即清理用户与房间
+    removeUserFromRoomImmediate(socket, joinedRoomId);
   });
 
   socket.on("join_room", async (payload, ack) => {
@@ -294,16 +306,32 @@ io.on("connection", (socket) => {
         return ack({ ok: false, error: "roomId 和 nickname 必填" });
       }
 
-      // Phase 2: 检查房间密码
-      const room = await db.getRoom(roomId);
-      if (room && room.password) {
-        // 房间有密码，需要验证
-        if (!password || password !== room.password) {
-          return ack({ ok: false, error: "PASSWORD_REQUIRED", message: "该房间需要密码" });
+      // 获取当前内存中的房间在线用户映射
+      const usersMap = roomIdToUsers.get(roomId) || new Map();
+
+      // Phase 2: 检查房间密码（考虑“空房即重置”的业务规则）
+      let room = await db.getRoom(roomId);
+      if (room) {
+        // 如果房间存在且当前在线用户为0（包括服务重启后的空映射），按照业务约定重置房间状态
+        if (usersMap.size === 0 && (room.password || room.creatorSession)) {
+          // 清空消息 + 清空密码与创建者
+          if (typeof db.clearMessagesForRoom === 'function') {
+            await db.clearMessagesForRoom(roomId);
+          } else {
+            await db.clearHistoryForRoom(roomId);
+          }
+          await db.updateRoom(roomId, { password: null, creatorSession: null });
+          // 重新读取房间信息（已清空密码）
+          room = await db.getRoom(roomId);
+        }
+        // 若仍有密码（非空房情况），则按正常逻辑验证密码
+        if (room.password) {
+          if (!password || password !== room.password) {
+            return ack({ ok: false, error: "PASSWORD_REQUIRED", message: "该房间需要密码" });
+          }
         }
       }
 
-      const usersMap = roomIdToUsers.get(roomId) || new Map();
       let existingSocketId = null;
       for (const [socketId, nickname] of usersMap.entries()) {
         if (nickname === name) {
@@ -325,7 +353,8 @@ io.on("connection", (socket) => {
           if (isAlive) {
             return ack({ ok: false, error: "该昵称已被占用" });
           } else {
-            removeUserFromRoom(oldSocket, roomId);
+            // 选择C：立即清理旧连接，避免残留
+            removeUserFromRoomImmediate(oldSocket, roomId);
             oldSocket.disconnect(true);
           }
         }

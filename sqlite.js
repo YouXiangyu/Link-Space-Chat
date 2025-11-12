@@ -109,6 +109,10 @@ function updateRoom(roomId, updates) {
       fields.push("password = ?");
       values.push(updates.password);
     }
+    if (updates.creatorSession !== undefined) {
+      fields.push("creator_session = ?");
+      values.push(updates.creatorSession);
+    }
     
     if (fields.length === 0) {
       return resolve();

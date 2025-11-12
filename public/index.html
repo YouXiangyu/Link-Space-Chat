@@ -151,6 +151,33 @@
     </div>
   </div>
 
+  <!-- Prefill Join Modal (从链接预填信息进入) -->
+  <div id="prefillJoinModal" class="modal-overlay">
+    <div class="modal-content">
+      <button type="button" class="modal-close-btn" id="prefillCancelBtn">&times;</button>
+      <h3>加入房间</h3>
+      <div class="form-group">
+        <label>昵称</label>
+        <input type="text" id="prefillNickname" placeholder="请输入昵称" maxlength="24" />
+      </div>
+      <div class="form-group">
+        <label>房间ID</label>
+        <input type="text" id="prefillRoomId" placeholder="房间ID" maxlength="40" />
+      </div>
+      <div class="form-group">
+        <label>房间密码</label>
+        <input type="password" id="prefillPassword" placeholder="如有密码请填写" maxlength="20" />
+      </div>
+      <div class="form-group">
+        <label>房间介绍</label>
+        <textarea id="prefillDescription" class="readonly-field" placeholder="（仅展示）" rows="2" readonly></textarea>
+      </div>
+      <div class="form-actions">
+        <button type="button" id="prefillConfirmBtn">确认进入</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 引入 socket.io 和 qrcode 客户端脚本 -->
   <script src="/socket.io/socket.io.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>

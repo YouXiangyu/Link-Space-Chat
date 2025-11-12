@@ -112,7 +112,7 @@
   // Phase 2: 增强的消息显示（支持消息类型）
   function appendMessage({ nickname, text, createdAt, contentType = 'text', id, status = 'sent', clientId }) {
     const li = document.createElement("li");
-    li.className = `message message-${contentType}`;
+    li.className = `message`;
     if (status === 'sending') {
       li.classList.add('message-sending');
     }
@@ -134,13 +134,9 @@
     textEl.className = "message-text";
     
     // Phase 2: 根据消息类型渲染
-    if (contentType === 'emoji') {
-      textEl.className += " message-emoji";
-      textEl.textContent = status === 'sending' ? "发送中…" : text;
-    } else {
-      // 普通文本，使用 textContent 防止 XSS，换行由样式处理
-      textEl.textContent = (status === 'sending' ? "发送中…" : text);
-    }
+    // 现阶段：高亮文本与普通文本统一显示
+    // 普通文本，使用 textContent 防止 XSS，换行由样式处理
+    textEl.textContent = (status === 'sending' ? "发送中…" : text);
 
     const content = document.createElement("div");
     content.className = "message-content";
@@ -397,7 +393,9 @@
   });
 
   // Phase 2: Edit Room Modal Logic
-  editRoomBtn.addEventListener("click", () => {
+  editRoomBtn.addEventListener("click", (e) => {
+    // 避免触发父级 roomInfo 的点击，防止误弹“房间信息”面板
+    e.stopPropagation();
     if (!currentRoom) return;
     editRoomName.value = currentRoom.name || "";
     editRoomDescription.value = currentRoom.description || "";
@@ -557,4 +555,79 @@
   if (!currentRoomId) {
     showInitialGuidance();
   }
+
+  // 自动将 URL 中的房间ID预填到侧栏加入表单
+  if (currentRoomId && roomIdInput) {
+    roomIdInput.value = currentRoomId;
+  }
+
+  // 解析查询参数并根据参数弹出预填窗口
+  function getSearchParams() {
+    const params = new URLSearchParams(location.search);
+    return {
+      nickname: params.get("nickname") || "",
+      password: params.get("password") || "",
+      description: params.get("desc") || params.get("description") || "",
+    };
+  }
+
+  const { nickname: qsNickname, password: qsPassword, description: qsDesc } = getSearchParams();
+  const shouldOpenPrefill =
+    Boolean(currentRoomId) || Boolean(qsNickname) || Boolean(qsPassword) || Boolean(qsDesc);
+
+  // 预填加入窗口元素（在 index.html 中定义）
+  const prefillJoinModal = el("prefillJoinModal");
+  const prefillNickname = el("prefillNickname");
+  const prefillRoomId = el("prefillRoomId");
+  const prefillPassword = el("prefillPassword");
+  const prefillDescription = el("prefillDescription");
+  const prefillCancelBtn = el("prefillCancelBtn");
+  const prefillConfirmBtn = el("prefillConfirmBtn");
+
+  function openPrefillModalIfNeeded() {
+    if (!prefillJoinModal || !shouldOpenPrefill) return;
+    // 预填值
+    if (prefillNickname) prefillNickname.value = qsNickname || nicknameInput.value || "";
+    if (prefillRoomId) prefillRoomId.value = currentRoomId || roomIdInput.value || "";
+    if (prefillPassword) prefillPassword.value = qsPassword || "";
+    if (prefillDescription) prefillDescription.value = qsDesc || "";
+    prefillJoinModal.classList.add("visible");
+  }
+
+  if (prefillCancelBtn && prefillJoinModal) {
+    prefillCancelBtn.addEventListener("click", () => {
+      prefillJoinModal.classList.remove("visible");
+    });
+  }
+
+  if (prefillJoinModal) {
+    prefillJoinModal.addEventListener("click", (e) => {
+      if (e.target === prefillJoinModal) {
+        prefillJoinModal.classList.remove("visible");
+      }
+    });
+  }
+
+  if (prefillConfirmBtn) {
+    prefillConfirmBtn.addEventListener("click", () => {
+      // 将预填窗口的数据写回侧栏表单，然后触发加入逻辑（不自动加入，需点确认）
+      if (prefillNickname && nicknameInput) nicknameInput.value = prefillNickname.value.trim();
+      if (prefillRoomId && roomIdInput) roomIdInput.value = prefillRoomId.value.trim();
+      if (prefillPassword && roomPasswordInput) roomPasswordInput.value = prefillPassword.value.trim();
+      // 不强制使用描述做任何操作，仅展示用途
+
+      // 若昵称缺失，提示补全；否则直接提交加入表单
+      const nickname = nicknameInput.value.trim();
+      if (!nickname) {
+        alert("请输入一个昵称");
+        return;
+      }
+      // 手动触发加入
+      joinForm.dispatchEvent(new Event("submit"));
+      prefillJoinModal.classList.remove("visible");
+    });
+  }
+
+  // 页面加载完成后，若链接带有房间/密码等信息，则弹出预填窗口
+  openPrefillModalIfNeeded();
 })();
