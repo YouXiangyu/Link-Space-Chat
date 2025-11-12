@@ -473,6 +473,176 @@ input, button { font-size: 1rem; }
   margin-left: auto;
 }
 
+/* Phase 3: 高亮消息样式 */
+.messages li.message-highlighted {
+  background: linear-gradient(135deg, #1a2f5a 0%, #2a4a7a 100%);
+  border-left: 3px solid #ffd700;
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.2);
+}
+
+.messages li.message-highlighted .message-text {
+  font-weight: 600;
+  color: #ffd700;
+}
+
+/* Phase 3: 搜索命中高亮 */
+.messages li.message-search-hit {
+  background: linear-gradient(135deg, #2a4a5a 0%, #3a6a7a 100%);
+  border-left: 3px solid #00ff88;
+  animation: searchHighlight 1s ease-out;
+}
+
+@keyframes searchHighlight {
+  0% {
+    background: linear-gradient(135deg, #3a6a8a 0%, #4a8aaa 100%);
+    transform: scale(1.02);
+  }
+  100% {
+    background: linear-gradient(135deg, #2a4a5a 0%, #3a6a7a 100%);
+    transform: scale(1);
+  }
+}
+
+/* Phase 3: 消息引用样式 */
+.message-reply {
+  margin-bottom: 8px;
+  padding: 8px 12px;
+  background: #0a1520;
+  border-left: 3px solid #3358ff;
+  border-radius: 6px;
+  font-size: 0.9em;
+  opacity: 0.8;
+}
+
+.message-reply-author {
+  color: #3358ff;
+  font-weight: 600;
+  margin-right: 8px;
+}
+
+.message-reply-text {
+  color: #a0a8b8;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 300px;
+}
+
+/* Phase 3: 回复框 */
+.reply-box {
+  padding: 8px 16px;
+  background: #0f192f;
+  border-top: 1px solid #1b2a4a;
+  border-bottom: 1px solid #1b2a4a;
+}
+
+.reply-preview {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #0a1520;
+  border-radius: 6px;
+  border-left: 3px solid #3358ff;
+}
+
+.reply-label {
+  color: #3358ff;
+  font-weight: 600;
+  font-size: 0.9em;
+}
+
+.reply-text {
+  flex: 1;
+  color: #a0a8b8;
+  font-size: 0.9em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cancel-reply-btn {
+  background: none;
+  border: none;
+  color: #a0a8b8;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.cancel-reply-btn:hover {
+  background: #1b2a4a;
+  color: #e6eaf2;
+}
+
+/* Phase 3: 搜索框 */
+.search-container {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.search-container input {
+  flex: 1;
+  background: #0f192f;
+  border: 1px solid #1b2a4a;
+  color: #e6eaf2;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+.search-container input:focus {
+  outline: none;
+  border-color: #3358ff;
+}
+
+.search-btn {
+  background: #3358ff;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  font-size: 16px;
+}
+
+.search-btn:hover {
+  background: #2746d8;
+}
+
+.search-results {
+  margin-top: 8px;
+  padding: 8px;
+  background: #0a1520;
+  border-radius: 6px;
+  font-size: 0.85em;
+  color: #a0a8b8;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.search-results::-webkit-scrollbar {
+  width: 4px;
+}
+
+.search-results::-webkit-scrollbar-track {
+  background: #0a1520;
+}
+
+.search-results::-webkit-scrollbar-thumb {
+  background: #1b2a4a;
+  border-radius: 2px;
+}
+
 /* Phase 2: Form Styles */
 .edit-room-form,
 .password-form {

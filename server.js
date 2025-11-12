@@ -200,6 +200,19 @@ function detectContentType(text) {
   return 'text';
 }
 
+// ==================== Phase 3: 高亮检测 ====================
+/**
+ * 检测消息是否应该高亮（以 # 开头的标题格式）
+ * @param {string} text - 消息文本
+ * @returns {boolean} 是否高亮
+ */
+function detectHighlight(text) {
+  if (!text || typeof text !== 'string') return false;
+  // 检测是否以 # 开头，后跟空格和至少一个字符
+  const trimmed = text.trim();
+  return /^#\s+.+/.test(trimmed);
+}
+
 function getLanAddress() {
   const ifaces = os.networkInterfaces();
   for (const name of Object.keys(ifaces)) {
@@ -431,16 +444,23 @@ io.on("connection", (socket) => {
       const incoming = typeof payload === 'string' ? { text: payload } : (payload || {});
       const textStr = String(incoming.text || "");
       const clientId = incoming.clientId || null;
+      // Phase 3: 支持 parentMessageId 和 isHighlighted
+      const parentMessageId = incoming.parentMessageId || null;
+      const isHighlighted = incoming.isHighlighted || false;
 
       // Phase 2: 检测消息类型
       const contentType = detectContentType(textStr);
+      // Phase 3: 检测高亮（如果前端未指定，则自动检测）
+      const shouldHighlight = isHighlighted || detectHighlight(textStr);
       
       const message = await db.saveMessage({
         roomId: joinedRoomId,
         nickname,
         text: textStr,
         createdAt: now,
-        contentType: contentType
+        contentType: contentType,
+        parentMessageId: parentMessageId,
+        isHighlighted: shouldHighlight
       });
       // 将clientId一并回传用于前端平滑替换
       const out = clientId ? { ...message, clientId } : message;

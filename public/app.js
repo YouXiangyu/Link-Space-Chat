@@ -34,6 +34,14 @@
   const copyLinkBtn = el("copyLinkBtn");
   const rateLimitToast = el("rateLimitToast");
   
+  // Phase 3: Reply and search elements
+  const replyBox = el("replyBox");
+  const replyPreviewText = el("replyPreviewText");
+  const cancelReplyBtn = el("cancelReplyBtn");
+  const searchInput = el("searchInput");
+  const searchBtn = el("searchBtn");
+  const searchResults = el("searchResults");
+  
   // Phase 2: Edit room modal
   const editRoomModal = el("editRoomModal");
   const closeEditModalBtn = el("closeEditModalBtn");
@@ -69,6 +77,10 @@
   let currentRoom = null;
   let isCreator = false;
   let pendingJoin = null; // 存储待加入的房间信息（用于密码验证）
+  
+  // Phase 3: 消息Map和回复状态
+  const messageMap = new Map(); // id -> message object
+  let replyingTo = null; // 当前回复的消息对象 { id, nickname, text }
 
   roomIdLabel.textContent = currentRoomId ? `房间：${currentRoomId}` : "未进入房间";
   leaveBtn.style.display = "none";
@@ -109,12 +121,16 @@
     messages.innerHTML = `<li class="guidance">欢迎来到 Link Space Chat！<br>请从左侧菜单输入昵称，然后加入或创建一个房间开始聊天。<br><br>由 Do It Dui Team 开发</li>`;
   }
 
-  // Phase 2: 增强的消息显示（支持消息类型）
-  function appendMessage({ nickname, text, createdAt, contentType = 'text', id, status = 'sent', clientId }) {
+  // Phase 3: 增强的消息显示（支持回复、高亮）
+  function appendMessage({ nickname, text, createdAt, contentType = 'text', id, status = 'sent', clientId, parentMessageId = null, isHighlighted = false }) {
     const li = document.createElement("li");
     li.className = `message`;
     if (status === 'sending') {
       li.classList.add('message-sending');
+    }
+    // Phase 3: 高亮消息
+    if (isHighlighted) {
+      li.classList.add('message-highlighted');
     }
     if (clientId) {
       li.dataset.clientId = clientId;
@@ -134,12 +150,30 @@
     textEl.className = "message-text";
     
     // Phase 2: 根据消息类型渲染
-    // 现阶段：高亮文本与普通文本统一显示
     // 普通文本，使用 textContent 防止 XSS，换行由样式处理
     textEl.textContent = (status === 'sending' ? "发送中…" : text);
 
     const content = document.createElement("div");
     content.className = "message-content";
+    
+    // Phase 3: 显示引用关系（最多2层）
+    if (parentMessageId && status !== 'sending') {
+      const parentMsg = messageMap.get(parentMessageId);
+      if (parentMsg) {
+        const replyEl = document.createElement("div");
+        replyEl.className = "message-reply";
+        const replyAuthor = document.createElement("span");
+        replyAuthor.className = "message-reply-author";
+        replyAuthor.textContent = parentMsg.nickname || "未知用户";
+        const replyText = document.createElement("span");
+        replyText.className = "message-reply-text";
+        replyText.textContent = parentMsg.text || "";
+        replyEl.appendChild(replyAuthor);
+        replyEl.appendChild(replyText);
+        content.appendChild(replyEl);
+      }
+    }
+    
     if (nickname && status !== 'sending') {
       content.appendChild(nicknameEl);
       content.appendChild(document.createTextNode(": "));
@@ -151,12 +185,63 @@
     wrapper.appendChild(timeEl);
     wrapper.appendChild(content);
 
-    // 发送中不显示额外状态条，文本中直接显示“发送中…”
-
     li.appendChild(wrapper);
     li.dataset.messageId = id;
     messages.appendChild(li);
     messages.scrollTop = messages.scrollHeight;
+    
+    // Phase 3: 保存到消息Map（仅已发送的消息）
+    if (status === 'sent' && id) {
+      messageMap.set(id, { id, nickname, text, createdAt, parentMessageId, isHighlighted });
+    }
+    
+    // Phase 3: PC端点击回复，移动端长按回复
+    if (status === 'sent') {
+      let clickTimer = null;
+      li.addEventListener('click', (e) => {
+        // PC端：单击触发回复
+        if (window.innerWidth > 768) {
+          e.stopPropagation();
+          startReply({ id, nickname, text });
+        }
+      });
+      
+      li.addEventListener('touchstart', (e) => {
+        clickTimer = setTimeout(() => {
+          // 移动端：长按触发回复
+          e.preventDefault();
+          startReply({ id, nickname, text });
+        }, 500); // 500ms长按
+      });
+      
+      li.addEventListener('touchend', () => {
+        if (clickTimer) {
+          clearTimeout(clickTimer);
+          clickTimer = null;
+        }
+      });
+      
+      li.addEventListener('touchmove', () => {
+        if (clickTimer) {
+          clearTimeout(clickTimer);
+          clickTimer = null;
+        }
+      });
+    }
+  }
+  
+  // Phase 3: 开始回复
+  function startReply(msg) {
+    replyingTo = msg;
+    replyPreviewText.textContent = `${msg.nickname}: ${msg.text.length > 50 ? msg.text.substring(0, 50) + '...' : msg.text}`;
+    replyBox.style.display = 'block';
+    messageInput.focus();
+  }
+  
+  // Phase 3: 取消回复
+  function cancelReply() {
+    replyingTo = null;
+    replyBox.style.display = 'none';
   }
 
   // 定时刷新悬浮相对时间（每60秒）
@@ -215,6 +300,8 @@
       const res = await fetch(`/api/rooms/${encodeURIComponent(roomId)}/messages?limit=20`);
       if (!res.ok) return;
       const data = await res.json();
+      // Phase 3: 清空消息Map后重新加载历史消息
+      messageMap.clear();
       for (const m of data.messages) appendMessage(m);
     } catch {}
   }
@@ -230,6 +317,9 @@
     leaveBtn.style.display = "none";
     updateRoomInfo(null);
     showInitialGuidance();
+    // Phase 3: 清空消息Map和回复状态
+    messageMap.clear();
+    cancelReply();
   }
 
   // Phase 2: 加入房间（支持密码）
@@ -327,6 +417,9 @@
     const text = messageInput.value.trim();
     if (!text) return;
     
+    // Phase 3: 检测高亮（# 开头）
+    const isHighlighted = /^#\s+.+/.test(text.trim());
+    
     // Phase 2: 显示发送中状态
     const tempId = Date.now();
     const clientId = `${tempId}-${Math.random().toString(36).slice(2, 8)}`;
@@ -337,10 +430,18 @@
       contentType: 'text',
       id: tempId,
       status: 'sending',
-      clientId
+      clientId,
+      parentMessageId: replyingTo ? replyingTo.id : null,
+      isHighlighted: isHighlighted
     });
     
-    socket.emit("chat_message", { text, clientId }, (resp) => {
+    // Phase 3: 发送消息时包含回复信息和高亮信息
+    socket.emit("chat_message", { 
+      text, 
+      clientId,
+      parentMessageId: replyingTo ? replyingTo.id : null,
+      isHighlighted: isHighlighted
+    }, (resp) => {
       if (!resp?.ok) {
         // 移除发送中的消息
         const msgEl = messages.querySelector(`[data-message-id="${tempId}"]`);
@@ -352,10 +453,16 @@
           console.error(resp?.error || resp?.message);
           alert(resp?.message || "发送失败");
         }
+      } else {
+        // Phase 3: 发送成功后取消回复状态
+        cancelReply();
       }
     });
     messageInput.value = "";
   });
+  
+  // Phase 3: 取消回复按钮
+  cancelReplyBtn.addEventListener("click", cancelReply);
 
   leaveBtn.addEventListener("click", leaveCurrentRoom);
 
@@ -472,6 +579,8 @@
   });
 
   socket.on("history", (list) => {
+    // Phase 3: 清空消息Map后重新加载历史消息
+    messageMap.clear();
     for (const m of list) appendMessage(m);
   });
 
@@ -498,7 +607,66 @@
       messages.innerHTML = `<li class="guidance">${data.message}</li>`;
     }
     if (joined) {
+      // Phase 3: 清空消息Map
+      messageMap.clear();
       fetchHistory(currentRoomId);
+    }
+  });
+  
+  // Phase 3: 搜索功能
+  function performSearch() {
+    const query = searchInput.value.trim();
+    if (!query || !joined) {
+      searchResults.style.display = 'none';
+      return;
+    }
+    
+    // 搜索当前已加载的消息
+    const results = [];
+    messageMap.forEach((msg) => {
+      if (msg.text && msg.text.toLowerCase().includes(query.toLowerCase())) {
+        results.push(msg);
+      }
+    });
+    
+    if (results.length === 0) {
+      searchResults.innerHTML = '<div style="padding: 8px; color: #8aa0b8;">未找到匹配的消息</div>';
+      searchResults.style.display = 'block';
+      return;
+    }
+    
+    // 显示搜索结果（最多10条）
+    const displayResults = results.slice(0, 10);
+    searchResults.innerHTML = displayResults.map(msg => {
+      const preview = msg.text.length > 40 ? msg.text.substring(0, 40) + '...' : msg.text;
+      return `<div style="padding: 4px 8px; cursor: pointer; border-radius: 4px; margin-bottom: 4px; background: #0f192f;" 
+                     onclick="scrollToMessage(${msg.id})" 
+                     onmouseover="this.style.background='#1b2a4a'" 
+                     onmouseout="this.style.background='#0f192f'">
+                <div style="font-weight: 600; color: #3358ff; font-size: 0.85em;">${msg.nickname || '未知'}</div>
+                <div style="color: #a0a8b8; font-size: 0.8em;">${preview}</div>
+              </div>`;
+    }).join('');
+    searchResults.style.display = 'block';
+  }
+  
+  // Phase 3: 滚动到指定消息并高亮
+  window.scrollToMessage = function(messageId) {
+    const msgEl = messages.querySelector(`[data-message-id="${messageId}"]`);
+    if (msgEl) {
+      msgEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      msgEl.classList.add('message-search-hit');
+      setTimeout(() => {
+        msgEl.classList.remove('message-search-hit');
+      }, 1000);
+    }
+  };
+  
+  searchBtn.addEventListener("click", performSearch);
+  searchInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      performSearch();
     }
   });
 

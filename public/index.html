@@ -36,6 +36,14 @@
             <ul id="userList" class="user-list"></ul>
           </div>
           <div class="section">
+            <div class="section-title">搜索消息</div>
+            <div class="search-container">
+              <input type="text" id="searchInput" placeholder="🔍 搜索当前消息..." maxlength="100" />
+              <button id="searchBtn" class="search-btn" title="搜索">🔍</button>
+            </div>
+            <div id="searchResults" class="search-results" style="display: none;"></div>
+          </div>
+          <div class="section">
             <div class="section-title">加入房间</div>
             <form id="joinForm" class="join-form">
               <input id="nickname" placeholder="昵称" maxlength="24" />
@@ -56,6 +64,14 @@
       <section class="chat">
         <ul id="messages" class="messages"></ul>
         <div id="rateLimitToast" class="rate-limit-toast">消息发送过于频繁，请稍后再试</div>
+        <!-- Phase 3: 回复框 -->
+        <div id="replyBox" class="reply-box" style="display: none;">
+          <div class="reply-preview">
+            <span class="reply-label">回复:</span>
+            <span id="replyPreviewText" class="reply-text"></span>
+            <button id="cancelReplyBtn" class="cancel-reply-btn" title="取消回复">×</button>
+          </div>
+        </div>
         <form id="messageForm" class="message-form">
           <input id="messageInput" autocomplete="off" placeholder="输入消息，回车发送" />
           <button type="submit">发送</button>
