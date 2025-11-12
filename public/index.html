@@ -22,31 +22,73 @@
       <aside class="sidebar">
         <div class="sidebar-content">
           <button id="sidebarCloseBtn" class="sidebar-close-btn">&times;</button>
-          <div class="section">
-            <div class="section-title">房间信息</div>
-            <div id="roomInfo" class="room-info">
-              <div id="roomName" class="room-name"></div>
-              <div id="roomDescription" class="room-description"></div>
-              <div id="roomPasswordStatus" class="room-password-status"></div>
-              <button id="editRoomBtn" class="edit-room-btn" style="display: none;">编辑房间</button>
+          <div id="sidebarMain" class="sidebar-main">
+            <div class="section">
+              <div class="section-title">房间信息</div>
+              <div id="roomInfo" class="room-info section-card">
+                <div id="roomName" class="room-name"></div>
+                <div id="roomDescription" class="room-description"></div>
+                <div id="roomPasswordStatus" class="room-password-status"></div>
+                <button id="editRoomBtn" class="edit-room-btn" style="display: none;">编辑房间</button>
+              </div>
+            </div>
+            <div class="section">
+              <div class="section-title">在线用户</div>
+              <div class="section-card">
+                <ul id="userList" class="user-list"></ul>
+              </div>
+            </div>
+            <div class="section">
+              <div class="section-title">加入房间</div>
+              <form id="joinForm" class="join-form section-card">
+                <input id="nickname" placeholder="昵称" maxlength="24" />
+                <input id="roomIdInput" placeholder="房间ID（留空使用URL）" maxlength="40" />
+                <input id="roomPasswordInput" type="password" placeholder="房间密码（如有）" maxlength="20" style="display: none;" />
+                <button type="submit">进入</button>
+              </form>
+            </div>
+            <div class="section">
+              <div class="section-card action-buttons">
+                <button id="shareBtn" class="share-btn">分享房间</button>
+                <button id="leaveBtn" class="leave-btn">退出房间</button>
+              </div>
+            </div>
+            <div class="section">
+              <div class="section-title">更多功能</div>
+              <div class="section-card more-menu">
+                <button class="more-menu-item" data-feature="search">消息搜索</button>
+                <button class="more-menu-item" data-feature="project">项目信息</button>
+              </div>
             </div>
           </div>
-          <div class="section">
-            <div class="section-title">在线用户</div>
-            <ul id="userList" class="user-list"></ul>
-          </div>
-          <div class="section">
-            <div class="section-title">加入房间</div>
-            <form id="joinForm" class="join-form">
-              <input id="nickname" placeholder="昵称" maxlength="24" />
-              <input id="roomIdInput" placeholder="房间ID（留空使用URL）" maxlength="40" />
-              <input id="roomPasswordInput" type="password" placeholder="房间密码（如有）" maxlength="20" style="display: none;" />
-              <button type="submit">进入</button>
-            </form>
-          </div>
-          <div class="section">
-              <button id="shareBtn" class="share-btn">分享房间</button>
-              <button id="leaveBtn" class="leave-btn">退出房间</button>
+          <div id="sidebarFeature" class="sidebar-feature" style="display: none;">
+            <div class="feature-header section-card">
+              <button id="featureBackBtn" class="feature-back-btn">← 返回</button>
+              <span id="featureTitle" class="feature-title"></span>
+            </div>
+            <div id="featureSearch" class="feature-body" data-feature="search" style="display: none;">
+              <div class="section">
+                <div class="section-title">消息搜索</div>
+                <div class="section-card">
+                  <div class="search-container feature-search-container">
+                    <input type="text" id="searchInput" placeholder="请输入关键字…" maxlength="100" />
+                    <button id="searchBtn" class="search-btn search-btn-icon" title="搜索" aria-label="搜索">🔍</button>
+                  </div>
+                  <div id="searchResults" class="search-results" style="display: none;"></div>
+                </div>
+              </div>
+            </div>
+            <div id="featureProject" class="feature-body" data-feature="project" style="display: none;">
+              <div class="section">
+                <div class="section-title">项目信息</div>
+                <div class="section-card project-info-card">
+                  <p>访问我们的开源仓库以了解更多项目进展与文档：</p>
+                  <a href="https://github.com/YouXiangyu/Link-Space-Chat?tab=readme-ov-file" target="_blank" rel="noopener" class="project-link">
+                    GitHub 仓库：Link-Space-Chat
+                  </a>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
         <div class="sidebar-footer">
@@ -56,6 +98,14 @@
       <section class="chat">
         <ul id="messages" class="messages"></ul>
         <div id="rateLimitToast" class="rate-limit-toast">消息发送过于频繁，请稍后再试</div>
+        <!-- Phase 3: 回复框 -->
+        <div id="replyBox" class="reply-box" style="display: none;">
+          <div class="reply-preview">
+            <span class="reply-label">回复:</span>
+            <span id="replyPreviewText" class="reply-text"></span>
+            <button id="cancelReplyBtn" class="cancel-reply-btn" title="取消回复">×</button>
+          </div>
+        </div>
         <form id="messageForm" class="message-form">
           <input id="messageInput" autocomplete="off" placeholder="输入消息，回车发送" />
           <button type="submit">发送</button>

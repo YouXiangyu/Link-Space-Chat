@@ -430,7 +430,9 @@ ALTER TABLE messages ADD COLUMN content_type TEXT DEFAULT 'text';
 
 ### Phase 3: 消息交互功能 💬
 
-**目标**: 增强消息交互能力，提升用户体验
+**目标**: 增强消息交互能力，提升用户体验  
+**本节更新时间**: 2025年11月12日  
+**完成时间**: 2025年11月12日
 
 **预计时间**: 2-3周
 
@@ -438,39 +440,37 @@ ALTER TABLE messages ADD COLUMN content_type TEXT DEFAULT 'text';
 
 #### Todo 清单
 
-- [ ] **消息回复功能**
-  - [ ] 为 `messages` 表添加 `parent_message_id` 字段（支持回复，可为NULL）
-  - [ ] 添加外键约束和索引（parent_message_id索引，提升查询性能）
-  - [ ] 实现消息回复逻辑（前端点击消息可回复，显示回复按钮）
-  - [ ] 前端显示回复关系（引用样式，显示被回复的消息内容）
-  - [ ] 优化回复消息的显示格式（嵌套显示，最多显示2层）
-  - [ ] 实现回复消息的跳转功能（点击回复可跳转到原消息）
+- [x] **消息回复功能**
+  - [x] 为 `messages` 表添加 `parent_message_id` 字段（支持引用回复，可为 NULL）
+  - [x] 创建 `idx_messages_parent` 索引，提升父消息查找性能
+  - [x] Socket 事件支持 `{ parentMessageId }`，后端存储并广播引用信息
+  - [x] PC 点击消息、移动端长按消息，弹出引用输入框并支持点击外部/按钮取消
+  - [x] 前端渲染引用块（展示昵称 + 摘要），最多展示两层引用关系
 
-- [ ] **消息高亮功能**
-  - [ ] 为 `messages` 表添加 `is_highlighted` 字段
-  - [ ] 实现消息高亮逻辑（@用户、关键词等）
-  - [ ] 前端支持高亮消息样式
+- [x] **消息高亮功能**
+  - [x] 为 `messages` 表添加 `is_highlighted` 字段（0/1）
+  - [x] 前端在发送前检测 `# 标题` 风格文本并标记高亮
+  - [x] 后端保存并回传高亮状态，前端复用现有亮色样式展示
 
-- [ ] **消息搜索（轻量级）**
-  - [ ] 实现基于 SQLite FTS5（全文搜索）的消息搜索
-  - [ ] 实现FTS索引与messages表的同步机制（新消息自动同步到FTS表）
-  - [ ] 前端添加搜索框（仅搜索当前房间，实时搜索）
-  - [ ] 搜索结果高亮显示（关键词高亮，显示匹配的消息）
-  - [ ] 添加搜索结果数量限制（最多显示50条结果，避免性能问题）
-  - [ ] 实现搜索历史记录（可选，本地存储最近搜索关键词）
+- [x] **局部搜索（仅前端）**
+  - [x] 侧边栏新增搜索输入框（带放大镜图标）
+  - [x] 在浏览器端遍历当前已加载的消息列表并执行文本匹配
+  - [x] 命中后滚动定位消息并临时高亮约 1 秒
+  - [x] 未命中时提示“未找到”，不额外拉取历史记录
 
 **数据库变更**:
 ```sql
 ALTER TABLE messages ADD COLUMN parent_message_id INTEGER;
 ALTER TABLE messages ADD COLUMN is_highlighted INTEGER DEFAULT 0;
 CREATE INDEX idx_messages_parent ON messages(parent_message_id);
-CREATE VIRTUAL TABLE messages_fts USING fts5(room_id, nickname, text);
 ```
 
 **验收标准**:
-- 可以回复任意消息
-- 支持消息高亮
-- 可以在房间内搜索历史消息
+- ✅ PC 点击 / 移动端长按可触发回复输入框，并支持取消
+- ✅ 回复消息展示引用信息，引用层级不超过两层
+- ✅ 输入 `#` 开头的标题消息自动高亮
+- ✅ 侧边栏搜索可定位当前已加载的消息并临时高亮
+- ✅ 房间被清空后，引用和高亮状态同步清除
 
 ---
 

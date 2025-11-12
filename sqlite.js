@@ -135,16 +135,27 @@ function updateRoom(roomId, updates) {
  * @param {string} params.text - 消息内容
  * @param {number} params.createdAt - 创建时间戳
  * @param {string} params.contentType - 消息类型（默认'text'）
+ * @param {number} params.parentMessageId - 父消息ID（可选，Phase 3）
+ * @param {boolean} params.isHighlighted - 是否高亮（可选，Phase 3）
  * @returns {Promise<Object>} 保存的消息对象
  */
-function saveMessage({ roomId, nickname, text, createdAt, contentType = 'text' }) {
+function saveMessage({ roomId, nickname, text, createdAt, contentType = 'text', parentMessageId = null, isHighlighted = false }) {
   return new Promise((resolve, reject) => {
     db.run(
-      "INSERT INTO messages(room_id, nickname, text, created_at, content_type) VALUES(?, ?, ?, ?, ?)",
-      [roomId, nickname, text, createdAt, contentType],
+      "INSERT INTO messages(room_id, nickname, text, created_at, content_type, parent_message_id, is_highlighted) VALUES(?, ?, ?, ?, ?, ?, ?)",
+      [roomId, nickname, text, createdAt, contentType, parentMessageId, isHighlighted ? 1 : 0],
       function (err) {
         if (err) return reject(err);
-        resolve({ id: this.lastID, roomId, nickname, text, createdAt, contentType });
+        resolve({ 
+          id: this.lastID, 
+          roomId, 
+          nickname, 
+          text, 
+          createdAt, 
+          contentType,
+          parentMessageId: parentMessageId || null,
+          isHighlighted: isHighlighted || false
+        });
       }
     );
   });
@@ -159,14 +170,20 @@ function saveMessage({ roomId, nickname, text, createdAt, contentType = 'text' }
  */
 function getRecentMessages(roomId, limit = 20) {
   return new Promise((resolve, reject) => {
-    // 只查询需要的字段，减少数据传输
+    // Phase 3: 包含 parent_message_id 和 is_highlighted 字段
     db.all(
-      "SELECT id, room_id as roomId, nickname, text, created_at as createdAt, content_type as contentType FROM messages WHERE room_id = ? ORDER BY created_at DESC LIMIT ?",
+      "SELECT id, room_id as roomId, nickname, text, created_at as createdAt, content_type as contentType, parent_message_id as parentMessageId, is_highlighted as isHighlighted FROM messages WHERE room_id = ? ORDER BY created_at DESC LIMIT ?",
       [roomId, limit],
       (err, rows) => {
         if (err) return reject(err);
         // 反转数组，使时间从旧到新
-        resolve(rows.reverse());
+        // Phase 3: 转换 isHighlighted 为布尔值
+        const processedRows = rows.reverse().map(row => ({
+          ...row,
+          isHighlighted: row.isHighlighted === 1 || row.isHighlighted === true,
+          parentMessageId: row.parentMessageId || null
+        }));
+        resolve(processedRows);
       }
     );
   });
@@ -336,6 +353,26 @@ function migrateDatabase() {
       db.run("ALTER TABLE messages ADD COLUMN content_type TEXT DEFAULT 'text'", (err) => {
         if (err && !err.message.includes("duplicate column") && !err.message.includes("already exists")) {
           console.warn("添加 messages.content_type 字段时出现警告:", err.message);
+        }
+      });
+      
+      // Phase 3: 为 messages 表添加 parent_message_id 和 is_highlighted 字段
+      db.run("ALTER TABLE messages ADD COLUMN parent_message_id INTEGER", (err) => {
+        if (err && !err.message.includes("duplicate column") && !err.message.includes("already exists")) {
+          console.warn("添加 messages.parent_message_id 字段时出现警告:", err.message);
+        }
+      });
+      
+      db.run("ALTER TABLE messages ADD COLUMN is_highlighted INTEGER DEFAULT 0", (err) => {
+        if (err && !err.message.includes("duplicate column") && !err.message.includes("already exists")) {
+          console.warn("添加 messages.is_highlighted 字段时出现警告:", err.message);
+        }
+      });
+      
+      // Phase 3: 为 parent_message_id 创建索引
+      db.run("CREATE INDEX IF NOT EXISTS idx_messages_parent ON messages(parent_message_id)", (err) => {
+        if (err && !err.message.includes("already exists") && !err.message.includes("duplicate")) {
+          console.warn("创建 idx_messages_parent 索引时出现警告:", err.message);
         }
       });
       
