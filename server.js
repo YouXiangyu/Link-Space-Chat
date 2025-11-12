@@ -12,6 +12,8 @@ const requestLogger = require("./middlewares/requestLogger");
 const { slowRequestTracker, getSlowRequests } = require("./middlewares/slowRequestTracker");
 const { buildHealthSnapshot } = require("./services/healthReporter");
 const roomState = require("./services/roomState");
+const rateLimiter = require("./services/rateLimiter");
+const messageService = require("./services/messageService");
 
 const app = express();
 const server = http.createServer(app);
@@ -84,44 +86,8 @@ app.get(["/", "/r/:roomId"], (_req, res) => {
 
 // ==================== 内存数据结构 ====================
 // 房间状态管理已移至 services/roomState.js
-
-// 消息频率限制：使用 Map 存储每个 socket 的消息时间记录（已优化）
-// 数据结构：Map<socketId, Array<timestamp>>
-const socketMessageTimes = new Map();
-
-// ==================== Phase 2: 消息类型检测 ====================
-/**
- * 检测消息类型（高亮文本/Emoji、URL等）
- * @param {string} text - 消息文本
- * @returns {string} 消息类型：'emoji', 'text'
- */
-function detectContentType(text) {
-  if (!text || typeof text !== 'string') return 'text';
-  
-  // 检测是否可视为高亮文本（当前通过纯 Emoji 判断，只包含Emoji和空白字符）
-  // Unicode Emoji范围：U+1F300-U+1F9FF, U+2600-U+26FF, U+2700-U+27BF, U+1F600-U+1F64F等
-  const emojiRegex = /^[\s\p{Emoji_Presentation}\p{Emoji}\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}]+$/u;
-  
-  // 如果消息只包含Emoji和空白字符，且至少有一个Emoji字符，则认为是高亮文本
-  if (emojiRegex.test(text) && /[\p{Emoji_Presentation}\p{Emoji}]/u.test(text)) {
-    return 'emoji';
-  }
-  
-  return 'text';
-}
-
-// ==================== Phase 3: 高亮检测 ====================
-/**
- * 检测消息是否应该高亮（以 # 开头的标题格式）
- * @param {string} text - 消息文本
- * @returns {boolean} 是否高亮
- */
-function detectHighlight(text) {
-  if (!text || typeof text !== 'string') return false;
-  // 检测是否以 # 开头，后跟空格和至少一个字符
-  const trimmed = text.trim();
-  return /^#\s+.+/.test(trimmed);
-}
+// 消息频率限制已移至 services/rateLimiter.js
+// 消息类型检测和高亮检测已移至 services/messageService.js
 
 function getLanAddress() {
   const ifaces = os.networkInterfaces();
@@ -173,14 +139,14 @@ io.on("connection", (socket) => {
   let nickname = null;
   
   // 初始化消息时间记录
-  socketMessageTimes.set(socket.id, []);
+  rateLimiter.initSocket(socket.id);
   
   // 如果用户重新连接，取消延迟清理任务
   roomState.cancelRemoval(socket.id);
   
   // 清理断开连接的socket记录
   socket.on("disconnect", () => {
-    socketMessageTimes.delete(socket.id);
+    rateLimiter.cleanupSocket(socket.id);
     // 选择C：空房立即重置，断开时立即清理用户与房间
     removeUserFromRoomImmediate(socket, joinedRoomId);
   });
@@ -265,7 +231,7 @@ io.on("connection", (socket) => {
       // 添加用户到房间
       roomState.addUser(roomId, socket.id, nickname);
 
-      const history = await db.getRecentMessages(roomId, 20);
+      const history = await messageService.getRecentMessages(db, roomId, 20);
       const roomInfo = await db.getRoom(roomId);
       // Phase 2: 添加isCreator字段
       const roomInfoWithCreator = roomInfo ? {
@@ -293,20 +259,10 @@ io.on("connection", (socket) => {
       if (!joinedRoomId || !nickname) return;
       
       // 消息频率限制检查
-      const now = Date.now();
-      const messageTimes = socketMessageTimes.get(socket.id) || [];
-      
-      // 清理超过时间窗口的旧记录
-      const recentTimes = messageTimes.filter(time => now - time < config.rateLimit.window);
-      
-      // 检查是否超过频率限制
-      if (recentTimes.length >= config.rateLimit.max) {
-        return ack({ ok: false, error: "rate_limit", message: "消息发送过于频繁，请稍后再试" });
+      const rateLimitResult = rateLimiter.checkRateLimit(socket.id);
+      if (!rateLimitResult.allowed) {
+        return ack({ ok: false, error: "rate_limit", message: rateLimitResult.message });
       }
-      
-      // 记录本次消息时间
-      recentTimes.push(now);
-      socketMessageTimes.set(socket.id, recentTimes);
       
       // Phase 2: 支持对象payload并透传clientId
       const incoming = typeof payload === 'string' ? { text: payload } : (payload || {});
@@ -316,20 +272,18 @@ io.on("connection", (socket) => {
       const parentMessageId = incoming.parentMessageId || null;
       const isHighlighted = incoming.isHighlighted || false;
 
-      // Phase 2: 检测消息类型
-      const contentType = detectContentType(textStr);
-      // Phase 3: 检测高亮（如果前端未指定，则自动检测）
-      const shouldHighlight = isHighlighted || detectHighlight(textStr);
-      
-      const message = await db.saveMessage({
+      // 处理并保存消息
+      const now = Date.now();
+      const message = await messageService.saveMessage({
+        db,
         roomId: joinedRoomId,
         nickname,
         text: textStr,
         createdAt: now,
-        contentType: contentType,
-        parentMessageId: parentMessageId,
-        isHighlighted: shouldHighlight
+        parentMessageId,
+        isHighlighted
       });
+      
       // 将clientId一并回传用于前端平滑替换
       const out = clientId ? { ...message, clientId } : message;
       io.to(joinedRoomId).emit("chat_message", out);
