@@ -7,36 +7,19 @@ const os = require("os");
 const path = require("path");
 const readline = require("readline");
 const db = require("./sqlite");
+const config = require("./config");
 
 const app = express();
 const server = http.createServer(app);
 
 // Socket.IO 配置优化：启用心跳检测优化
-const io = new Server(server, {
-  pingTimeout: 60000,      // 60秒超时
-  pingInterval: 25000,     // 25秒心跳间隔
-  transports: ['websocket', 'polling'], // 支持 WebSocket 和轮询
-  allowEIO3: true          // 兼容旧版本客户端
-});
+const io = new Server(server, config.socket);
 
 app.use(express.json());
 app.use(express.static("public"));
 
 // ==================== 配置常量 ====================
-// 消息自动清理配置（可通过环境变量配置，默认1天）
-const MESSAGE_RETENTION_DAYS = Number(process.env.MESSAGE_RETENTION_DAYS || 1);
-// 房间和用户列表清理延迟（断开连接后3分钟删除）
-const CLEANUP_DELAY = 3 * 60 * 1000; // 3分钟
-// 内存告警阈值（80%）
-const MEMORY_ALERT_THRESHOLD = 0.8;
-// 健康检查间隔（3分钟）
-const HEALTH_CHECK_INTERVAL = 3 * 60 * 1000;
-// 消息自动清理间隔（每小时执行一次）
-const MESSAGE_CLEANUP_INTERVAL = 60 * 60 * 1000;
-// 请求日志开关（可通过环境变量控制，默认关闭）
-const ENABLE_REQUEST_LOG = process.env.ENABLE_REQUEST_LOG === 'true';
-// 慢请求阈值（毫秒）
-const SLOW_REQUEST_THRESHOLD = 1000;
+// 所有配置项已移至 config/index.js，通过 config 对象访问
 
 // ==================== 错误处理统一格式 ====================
 /**
@@ -55,14 +38,14 @@ function sendError(res, statusCode, errorCode, message) {
 }
 
 // ==================== 请求日志中间件 ====================
-if (ENABLE_REQUEST_LOG) {
+if (config.log.enableRequestLog) {
   app.use((req, res, next) => {
     const startTime = Date.now();
     const originalEnd = res.end;
     
     res.end = function(...args) {
       const duration = Date.now() - startTime;
-      const logLevel = duration > SLOW_REQUEST_THRESHOLD ? 'SLOW' : 'INFO';
+      const logLevel = duration > config.monitor.slowRequestThreshold ? 'SLOW' : 'INFO';
       console.log(`[${logLevel}] ${req.method} ${req.path} - ${duration}ms - ${res.statusCode}`);
       originalEnd.apply(this, args);
     };
@@ -80,7 +63,7 @@ app.use((req, res, next) => {
   
   res.end = function(...args) {
     const duration = Date.now() - startTime;
-    if (duration > SLOW_REQUEST_THRESHOLD) {
+    if (duration > config.monitor.slowRequestThreshold) {
       slowRequests.push({
         method: req.method,
         path: req.path,
@@ -171,9 +154,6 @@ const roomIdToUsers = new Map();
 // 消息频率限制：使用 Map 存储每个 socket 的消息时间记录（已优化）
 // 数据结构：Map<socketId, Array<timestamp>>
 const socketMessageTimes = new Map();
-// 频率限制配置：每3秒最多发送5条消息
-const RATE_LIMIT_WINDOW = 3000; // 3秒
-const RATE_LIMIT_MAX = 5; // 最多5条
 
 // 延迟清理任务：存储需要延迟清理的房间和用户信息
 // 数据结构：Map<socketId, { roomId, timeout }>
@@ -283,7 +263,7 @@ function removeUserFromRoom(socket, roomId) {
   const timeout = setTimeout(() => {
     removeUserFromRoomImmediate(socket, roomId);
     delayedCleanupTasks.delete(socket.id);
-  }, CLEANUP_DELAY);
+  }, config.cleanup.delay);
   
   delayedCleanupTasks.set(socket.id, { roomId, timeout });
 }
@@ -429,10 +409,10 @@ io.on("connection", (socket) => {
       const messageTimes = socketMessageTimes.get(socket.id) || [];
       
       // 清理超过时间窗口的旧记录
-      const recentTimes = messageTimes.filter(time => now - time < RATE_LIMIT_WINDOW);
+      const recentTimes = messageTimes.filter(time => now - time < config.rateLimit.window);
       
       // 检查是否超过频率限制
-      if (recentTimes.length >= RATE_LIMIT_MAX) {
+      if (recentTimes.length >= config.rateLimit.max) {
         return ack({ ok: false, error: "rate_limit", message: "消息发送过于频繁，请稍后再试" });
       }
       
@@ -544,24 +524,7 @@ io.on("connection", (socket) => {
 
 });
 
-// 解析命令行参数
-const args = process.argv.slice(2);
-let PORT = Number(process.env.LINK_SPACE_PORT || 3000);
-let enableNgrok = false;
-
-// 检查参数：如果第一个参数是"ngrok"，启用ngrok；如果是数字，使用该端口
-if (args.length > 0) {
-  const firstArg = args[0].toLowerCase();
-  if (firstArg === "ngrok") {
-    enableNgrok = true;
-    // ngrok模式下，端口可以从第二个参数获取，或使用环境变量/默认值
-    if (args.length > 1 && !isNaN(Number(args[1]))) {
-      PORT = Number(args[1]);
-    }
-  } else if (!isNaN(Number(firstArg))) {
-    PORT = Number(firstArg);
-  }
-}
+// 端口和 ngrok 配置已移至 config/index.js
 
 // ==================== 内存监控和告警 ====================
 /**
@@ -574,8 +537,8 @@ function checkMemoryUsage() {
   const usedMem = totalMem - freeMem;
   const memUsagePercent = usedMem / totalMem;
   
-  if (memUsagePercent > MEMORY_ALERT_THRESHOLD) {
-    console.warn(`[内存告警] 系统内存使用率: ${(memUsagePercent * 100).toFixed(2)}% (阈值: ${MEMORY_ALERT_THRESHOLD * 100}%)`);
+  if (memUsagePercent > config.monitor.memoryAlertThreshold) {
+    console.warn(`[内存告警] 系统内存使用率: ${(memUsagePercent * 100).toFixed(2)}% (阈值: ${config.monitor.memoryAlertThreshold * 100}%)`);
     console.warn(`[内存告警] 堆内存使用: ${Math.round(memUsage.heapUsed / 1024 / 1024)}MB / ${Math.round(memUsage.heapTotal / 1024 / 1024)}MB`);
   }
   
@@ -589,16 +552,16 @@ function checkMemoryUsage() {
  */
 async function cleanupOldMessages() {
   try {
-    const deletedCount = await db.cleanOldMessages(MESSAGE_RETENTION_DAYS);
+    const deletedCount = await db.cleanOldMessages(config.message.retentionDays);
     if (deletedCount > 0) {
-      console.log(`[自动清理] 已清理 ${deletedCount} 条超过 ${MESSAGE_RETENTION_DAYS} 天的消息`);
+      console.log(`[自动清理] 已清理 ${deletedCount} 条超过 ${config.message.retentionDays} 天的消息`);
     }
   } catch (err) {
     console.error("[自动清理] 清理旧消息失败:", err);
   }
   
   // 每小时执行一次
-  setTimeout(cleanupOldMessages, MESSAGE_CLEANUP_INTERVAL);
+  setTimeout(cleanupOldMessages, config.message.cleanupInterval);
 }
 
 // ==================== 健康检查定期自检 ====================
@@ -616,7 +579,7 @@ async function performHealthCheck() {
   }
   
   // 每3分钟检查一次
-  setTimeout(performHealthCheck, HEALTH_CHECK_INTERVAL);
+  setTimeout(performHealthCheck, config.monitor.healthCheckInterval);
 }
 
 // ==================== 启动服务器 ====================
@@ -626,17 +589,17 @@ async function main() {
     await db.ready;
   }
 
-  server.listen(PORT, async () => {
-    console.log(`本地服务运行在 http://localhost:${PORT}`);
+  server.listen(config.server.port, async () => {
+    console.log(`本地服务运行在 http://localhost:${config.server.port}`);
     const lan = getLanAddress();
-    console.log(`局域网访问: http://${lan}:${PORT}`);
-    console.log(`[配置] 消息保留天数: ${MESSAGE_RETENTION_DAYS} 天`);
-    console.log(`[配置] 请求日志: ${ENABLE_REQUEST_LOG ? '已启用' : '已禁用'}`);
+    console.log(`局域网访问: http://${lan}:${config.server.port}`);
+    console.log(`[配置] 消息保留天数: ${config.message.retentionDays} 天`);
+    console.log(`[配置] 请求日志: ${config.log.enableRequestLog ? '已启用' : '已禁用'}`);
 
     // 如果启用ngrok
-    if (enableNgrok) {
+    if (config.server.enableNgrok) {
       const ngrok = require("ngrok");
-      const authtoken = process.env.NGROK_AUTHTOKEN;
+      const authtoken = config.server.ngrokAuthtoken;
       
       if (!authtoken) {
         console.warn("警告: 未设置 NGROK_AUTHTOKEN 环境变量，ngrok 可能无法正常工作");
@@ -644,7 +607,7 @@ async function main() {
       } else {
         try {
           await ngrok.authtoken(authtoken);
-          const url = await ngrok.connect(PORT);
+          const url = await ngrok.connect(config.server.port);
           console.log(`\n公网访问地址: ${url}`);
           console.log("ngrok 已启动，服务已暴露到公网\n");
         } catch (err) {
