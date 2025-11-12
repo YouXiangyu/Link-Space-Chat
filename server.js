@@ -8,6 +8,8 @@ const path = require("path");
 const readline = require("readline");
 const db = require("./sqlite");
 const config = require("./config");
+const requestLogger = require("./middlewares/requestLogger");
+const { slowRequestTracker, getSlowRequests } = require("./middlewares/slowRequestTracker");
 
 const app = express();
 const server = http.createServer(app);
@@ -37,49 +39,14 @@ function sendError(res, statusCode, errorCode, message) {
   });
 }
 
-// ==================== 请求日志中间件 ====================
+// ==================== 中间件配置 ====================
+// 请求日志中间件（可选，通过配置控制）
 if (config.log.enableRequestLog) {
-  app.use((req, res, next) => {
-    const startTime = Date.now();
-    const originalEnd = res.end;
-    
-    res.end = function(...args) {
-      const duration = Date.now() - startTime;
-      const logLevel = duration > config.monitor.slowRequestThreshold ? 'SLOW' : 'INFO';
-      console.log(`[${logLevel}] ${req.method} ${req.path} - ${duration}ms - ${res.statusCode}`);
-      originalEnd.apply(this, args);
-    };
-    
-    next();
-  });
+  app.use(requestLogger());
 }
 
-// ==================== 性能监控中间件 ====================
-const slowRequests = [];
-
-app.use((req, res, next) => {
-  const startTime = Date.now();
-  const originalEnd = res.end;
-  
-  res.end = function(...args) {
-    const duration = Date.now() - startTime;
-    if (duration > config.monitor.slowRequestThreshold) {
-      slowRequests.push({
-        method: req.method,
-        path: req.path,
-        duration: duration,
-        timestamp: Date.now()
-      });
-      // 只保留最近100条慢请求记录
-      if (slowRequests.length > 100) {
-        slowRequests.shift();
-      }
-    }
-    originalEnd.apply(this, args);
-  };
-  
-  next();
-});
+// 慢请求监控中间件（始终启用，供健康检查使用）
+app.use(slowRequestTracker());
 
 // ==================== 增强的健康检查端点 ====================
 app.get("/health", async (_req, res) => {
@@ -124,7 +91,7 @@ app.get("/health", async (_req, res) => {
         oldestMessageTime: dbStats.oldestMessageTime
       },
       uptime: process.uptime(),
-      slowRequests: slowRequests.slice(-10) // 返回最近10条慢请求
+      slowRequests: getSlowRequests() // 返回最近10条慢请求
     });
   } catch (e) {
     sendError(res, 500, 'HEALTH_CHECK_ERROR', String(e));
