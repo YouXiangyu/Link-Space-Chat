@@ -10,6 +10,7 @@ const db = require("./sqlite");
 const config = require("./config");
 const requestLogger = require("./middlewares/requestLogger");
 const { slowRequestTracker, getSlowRequests } = require("./middlewares/slowRequestTracker");
+const { buildHealthSnapshot } = require("./services/healthReporter");
 
 const app = express();
 const server = http.createServer(app);
@@ -51,48 +52,13 @@ app.use(slowRequestTracker());
 // ==================== 增强的健康检查端点 ====================
 app.get("/health", async (_req, res) => {
   try {
-    const memUsage = process.memoryUsage();
-    const totalMem = os.totalmem();
-    const freeMem = os.freemem();
-    const usedMem = totalMem - freeMem;
-    const memUsagePercent = usedMem / totalMem;
-    
-    // 获取数据库统计信息
-    const dbStats = await db.getDatabaseStats();
-    
-    // 获取连接数
-    const connectionCount = io.sockets.sockets.size;
-    
-    // 检查数据库连接
-    const dbConnected = await db.checkConnection();
-    
-    res.json({
-      ok: true,
-      timestamp: Date.now(),
-      memory: {
-        used: Math.round(memUsage.heapUsed / 1024 / 1024), // MB
-        total: Math.round(memUsage.heapTotal / 1024 / 1024), // MB
-        external: Math.round(memUsage.external / 1024 / 1024), // MB
-        rss: Math.round(memUsage.rss / 1024 / 1024), // MB
-        systemTotal: Math.round(totalMem / 1024 / 1024), // MB
-        systemUsed: Math.round(usedMem / 1024 / 1024), // MB
-        systemFree: Math.round(freeMem / 1024 / 1024), // MB
-        usagePercent: Math.round(memUsagePercent * 100) / 100
-      },
-      connections: {
-        active: connectionCount,
-        rooms: roomIdToUsers.size
-      },
-      database: {
-        connected: dbConnected,
-        size: dbStats.dbSize,
-        messageCount: dbStats.messageCount,
-        roomCount: dbStats.roomCount,
-        oldestMessageTime: dbStats.oldestMessageTime
-      },
-      uptime: process.uptime(),
-      slowRequests: getSlowRequests() // 返回最近10条慢请求
+    const snapshot = await buildHealthSnapshot({
+      io,
+      db,
+      getSlowRequests,
+      roomState: roomIdToUsers
     });
+    res.json(snapshot);
   } catch (e) {
     sendError(res, 500, 'HEALTH_CHECK_ERROR', String(e));
   }
