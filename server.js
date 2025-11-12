@@ -11,6 +11,7 @@ const config = require("./config");
 const requestLogger = require("./middlewares/requestLogger");
 const { slowRequestTracker, getSlowRequests } = require("./middlewares/slowRequestTracker");
 const { buildHealthSnapshot } = require("./services/healthReporter");
+const roomState = require("./services/roomState");
 
 const app = express();
 const server = http.createServer(app);
@@ -56,7 +57,7 @@ app.get("/health", async (_req, res) => {
       io,
       db,
       getSlowRequests,
-      roomState: roomIdToUsers
+      roomState: roomState.getSnapshot()
     });
     res.json(snapshot);
   } catch (e) {
@@ -82,15 +83,11 @@ app.get(["/", "/r/:roomId"], (_req, res) => {
 });
 
 // ==================== 内存数据结构 ====================
-const roomIdToUsers = new Map();
+// 房间状态管理已移至 services/roomState.js
 
 // 消息频率限制：使用 Map 存储每个 socket 的消息时间记录（已优化）
 // 数据结构：Map<socketId, Array<timestamp>>
 const socketMessageTimes = new Map();
-
-// 延迟清理任务：存储需要延迟清理的房间和用户信息
-// 数据结构：Map<socketId, { roomId, timeout }>
-const delayedCleanupTasks = new Map();
 
 // ==================== Phase 2: 消息类型检测 ====================
 /**
@@ -138,9 +135,12 @@ function getLanAddress() {
   return "localhost";
 }
 
+/**
+ * 广播房间用户列表（需要io对象，保留在server.js中）
+ * @param {string} roomId - 房间ID
+ */
 function emitRoomUsers(roomId) {
-  const usersMap = roomIdToUsers.get(roomId) || new Map();
-  const users = Array.from(usersMap.values());
+  const users = roomState.getUsers(roomId);
   io.to(roomId).emit("room_users", users);
 }
 
@@ -151,26 +151,8 @@ function emitRoomUsers(roomId) {
  */
 function removeUserFromRoomImmediate(socket, roomId) {
   if (!roomId) return;
-  const usersMap = roomIdToUsers.get(roomId);
-  if (usersMap && usersMap.has(socket.id)) {
-    usersMap.delete(socket.id);
-    if (usersMap.size === 0) {
-      roomIdToUsers.delete(roomId);
-      // 房间无人后，重置房间：清空消息、置空密码与creator_session
-      (async () => {
-        try {
-          if (typeof db.clearMessagesForRoom === 'function') {
-            await db.clearMessagesForRoom(roomId);
-          } else {
-            await db.clearHistoryForRoom(roomId);
-          }
-          await db.updateRoom(roomId, { password: null, creatorSession: null });
-          console.log(`Room ${roomId} reset after empty: messages cleared, password and creator reset.`);
-        } catch (err) {
-          console.error(`Failed to reset empty room ${roomId}:`, err);
-        }
-      })();
-    }
+  const removed = roomState.removeUserImmediate(socket.id, roomId, db);
+  if (removed) {
     emitRoomUsers(roomId);
     console.log(`User disconnected from room ${roomId}`);
   }
@@ -183,22 +165,7 @@ function removeUserFromRoomImmediate(socket, roomId) {
  */
 function removeUserFromRoom(socket, roomId) {
   if (!roomId) return;
-  
-  // 取消之前的清理任务（如果用户重新连接）
-  const existingTask = delayedCleanupTasks.get(socket.id);
-  if (existingTask) {
-    clearTimeout(existingTask.timeout);
-    delayedCleanupTasks.delete(socket.id);
-    return; // 用户重新连接，不执行清理
-  }
-  
-  // 设置延迟清理任务
-  const timeout = setTimeout(() => {
-    removeUserFromRoomImmediate(socket, roomId);
-    delayedCleanupTasks.delete(socket.id);
-  }, config.cleanup.delay);
-  
-  delayedCleanupTasks.set(socket.id, { roomId, timeout });
+  roomState.scheduleRemoval(socket.id, roomId, db);
 }
 
 io.on("connection", (socket) => {
@@ -209,11 +176,7 @@ io.on("connection", (socket) => {
   socketMessageTimes.set(socket.id, []);
   
   // 如果用户重新连接，取消延迟清理任务
-  const existingTask = delayedCleanupTasks.get(socket.id);
-  if (existingTask) {
-    clearTimeout(existingTask.timeout);
-    delayedCleanupTasks.delete(socket.id);
-  }
+  roomState.cancelRemoval(socket.id);
   
   // 清理断开连接的socket记录
   socket.on("disconnect", () => {
@@ -233,13 +196,14 @@ io.on("connection", (socket) => {
       }
 
       // 获取当前内存中的房间在线用户映射
-      const usersMap = roomIdToUsers.get(roomId) || new Map();
+      const usersMap = roomState.getUsersMap(roomId);
 
-      // Phase 2: 检查房间密码（考虑“空房即重置”的业务规则）
+      // Phase 2: 检查房间密码（考虑"空房即重置"的业务规则）
       let room = await db.getRoom(roomId);
       if (room) {
         // 如果房间存在且当前在线用户为0（包括服务重启后的空映射），按照业务约定重置房间状态
-        if (usersMap.size === 0 && (room.password || room.creatorSession)) {
+        const userCount = usersMap ? usersMap.size : 0;
+        if (userCount === 0 && (room.password || room.creatorSession)) {
           // 清空消息 + 清空密码与创建者
           if (typeof db.clearMessagesForRoom === 'function') {
             await db.clearMessagesForRoom(roomId);
@@ -258,18 +222,14 @@ io.on("connection", (socket) => {
         }
       }
 
-      let existingSocketId = null;
-      for (const [socketId, nickname] of usersMap.entries()) {
-        if (nickname === name) {
-          existingSocketId = socketId;
-          break;
-        }
-      }
+      // 检查昵称是否已被占用
+      let existingSocketId = roomState.findSocketIdByNickname(roomId, name);
 
       if (existingSocketId) {
         const oldSocket = io.sockets.sockets.get(existingSocketId);
         if (!oldSocket) {
-          usersMap.delete(existingSocketId);
+          // Socket不存在，从房间状态中移除（通过removeUserImmediate）
+          roomState.removeUserImmediate(existingSocketId, roomId, db);
         } else {
           const isAlive = await new Promise((resolve) => {
             oldSocket.timeout(2000).emit("server-ping", (err, pong) => {
@@ -300,15 +260,10 @@ io.on("connection", (socket) => {
       nickname = name;
 
       // 如果用户重新连接，取消之前的清理任务
-      const existingTask = delayedCleanupTasks.get(socket.id);
-      if (existingTask) {
-        clearTimeout(existingTask.timeout);
-        delayedCleanupTasks.delete(socket.id);
-      }
+      roomState.cancelRemoval(socket.id);
 
-      const newUsersMap = roomIdToUsers.get(roomId) || new Map();
-      newUsersMap.set(socket.id, nickname);
-      roomIdToUsers.set(roomId, newUsersMap);
+      // 添加用户到房间
+      roomState.addUser(roomId, socket.id, nickname);
 
       const history = await db.getRecentMessages(roomId, 20);
       const roomInfo = await db.getRoom(roomId);
