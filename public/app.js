@@ -41,9 +41,12 @@
   const searchInput = el("searchInput");
   const searchBtn = el("searchBtn");
   const searchResults = el("searchResults");
-  const moreToggleBtn = el("moreToggleBtn");
-  const moreToggleIcon = el("moreToggleIcon");
-  const morePanel = el("morePanel");
+  const sidebarMain = el("sidebarMain");
+  const sidebarFeature = el("sidebarFeature");
+  const featureBackBtn = el("featureBackBtn");
+  const featureTitle = el("featureTitle");
+  const featureSearchSection = el("featureSearch");
+  const featureProjectSection = el("featureProject");
   
   // Phase 2: Edit room modal
   const editRoomModal = el("editRoomModal");
@@ -84,17 +87,44 @@
   // Phase 3: 消息Map和回复状态
   const messageMap = new Map(); // id -> message object
   let replyingTo = null; // 当前回复的消息对象 { id, nickname, text }
-  let morePanelOpen = false;
+  let currentFeature = null;
 
-  const setMorePanelState = (open) => {
-    morePanelOpen = open;
-    if (morePanel) {
-      morePanel.style.display = open ? "block" : "none";
-    }
-    if (moreToggleIcon) {
-      moreToggleIcon.classList.toggle("open", open);
-    }
+  const featureSections = {
+    search: featureSearchSection,
+    project: featureProjectSection
   };
+
+  const featureTitles = {
+    search: "消息搜索",
+    project: "项目信息"
+  };
+
+  function openFeature(featureKey) {
+    if (!sidebarMain || !sidebarFeature) return;
+    const section = featureSections[featureKey];
+    if (!section) return;
+    currentFeature = featureKey;
+    sidebarMain.style.display = "none";
+    sidebarFeature.style.display = "flex";
+    Object.entries(featureSections).forEach(([key, elem]) => {
+      if (elem) {
+        elem.style.display = key === featureKey ? "block" : "none";
+      }
+    });
+    if (featureTitle) {
+      featureTitle.textContent = featureTitles[featureKey] || "";
+    }
+    if (featureKey === "search" && searchInput) {
+      searchInput.focus();
+    }
+  }
+
+  function closeFeature() {
+    currentFeature = null;
+    if (sidebarMain) sidebarMain.style.display = "";
+    if (sidebarFeature) sidebarFeature.style.display = "none";
+    if (searchResults) searchResults.style.display = "none";
+  }
 
   roomIdLabel.textContent = currentRoomId ? `房间：${currentRoomId}` : "未进入房间";
   leaveBtn.style.display = "none";
@@ -258,22 +288,23 @@
     replyBox.style.display = 'none';
   }
 
-  if (moreToggleBtn && morePanel) {
-    setMorePanelState(false);
-    moreToggleBtn.addEventListener("click", () => {
-      setMorePanelState(!morePanelOpen);
+  closeFeature();
+
+  if (featureBackBtn) {
+    featureBackBtn.addEventListener("click", () => {
+      closeFeature();
     });
-  } else {
-    setMorePanelState(false);
   }
 
-  if (searchInput) {
-    searchInput.addEventListener("focus", () => {
-      if (!morePanelOpen) {
-        setMorePanelState(true);
+  const moreMenuButtons = document.querySelectorAll(".more-menu-item");
+  moreMenuButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const featureKey = btn.dataset.feature;
+      if (featureKey) {
+        openFeature(featureKey);
       }
     });
-  }
+  });
 
   // 定时刷新悬浮相对时间（每60秒）
   setInterval(() => {
@@ -353,7 +384,7 @@
     cancelReply();
     if (searchInput) searchInput.value = "";
     if (searchResults) searchResults.style.display = 'none';
-    setMorePanelState(false);
+    closeFeature();
   }
 
   // Phase 2: 加入房间（支持密码）
@@ -655,8 +686,8 @@
       searchResults.style.display = 'none';
       return;
     }
-    if (!morePanelOpen) {
-      setMorePanelState(true);
+    if (currentFeature !== "search") {
+      openFeature("search");
     }
     
     // 搜索当前已加载的消息

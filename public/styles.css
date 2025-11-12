@@ -70,7 +70,7 @@ html, body {
 
 .sidebar {
   flex-shrink: 0;
-  width: 280px;
+  width: 320px;
   border-right: 1px solid #1b2a4a;
   padding: 16px;
   overflow-y: auto;
@@ -114,7 +114,7 @@ html, body {
 
 /* --- Desktop Collapsed State --- */
 .sidebar-open .sidebar {
-  width: 280px;
+  width: 320px;
   margin-left: 0;
 }
 
@@ -650,66 +650,116 @@ input, button { font-size: 1rem; }
   border-radius: 2px;
 }
 
-.more-section {
-  border-top: 1px solid #13203a;
-  padding-top: 16px;
-  margin-top: auto;
+.sidebar-main,
+.sidebar-feature {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 
-.more-toggle-btn {
-  width: 100%;
+.sidebar-feature {
+  flex-grow: 1;
+}
+
+.feature-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #0f192f;
-  border: 1px solid #1b2a4a;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.feature-back-btn {
+  background: none;
+  border: none;
   color: #e6eaf2;
-  border-radius: 12px;
-  padding: 10px 14px;
   font-size: 14px;
   cursor: pointer;
-  transition: border-color 0.2s, background-color 0.2s;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background-color 0.2s;
 }
 
-.more-toggle-btn:hover {
-  border-color: #3358ff;
-  background: #101d33;
+.feature-back-btn:hover {
+  background: rgba(51, 88, 255, 0.15);
 }
 
-.more-toggle-icon {
-  font-size: 12px;
-  transition: transform 0.2s;
-}
-
-.more-toggle-icon.open {
-  transform: rotate(180deg);
-}
-
-.more-panel {
-  margin-top: 12px;
-  background: #0a1520;
-  border: 1px solid #1b2a4a;
-  border-radius: 12px;
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.more-panel-section {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.more-panel-title {
-  font-size: 13px;
+.feature-title {
+  font-size: 14px;
   font-weight: 600;
-  color: #8aa0b8;
+  color: #e6eaf2;
 }
 
-.more-panel .search-container {
-  max-width: 280px;
+.feature-body .section-card {
+  margin-top: 0;
+}
+
+.feature-search-container {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.sidebar-feature .search-results {
+  max-height: 220px;
+}
+
+.more-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.more-menu-item {
+  width: 100%;
+  background: #101d33;
+  border: 1px solid rgba(51, 88, 255, 0.15);
+  color: #e6eaf2;
+  border-radius: 10px;
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 14px;
+  cursor: pointer;
+  transition: border-color 0.2s, background-color 0.2s, transform 0.2s;
+}
+
+.more-menu-item:hover {
+  border-color: #3358ff;
+  background: #142448;
+  transform: translateY(-1px);
+}
+
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.project-info-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.project-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #9efeff;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s;
+}
+
+.project-link::after {
+  content: "↗";
+  font-size: 12px;
+}
+
+.project-link:hover {
+  color: #ffffff;
 }
 
 /* Phase 2: Form Styles */
