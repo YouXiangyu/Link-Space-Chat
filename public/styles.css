@@ -696,12 +696,41 @@ input, button { font-size: 1rem; }
 
 .feature-search-container {
   display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
+  gap: 12px;
+  margin-bottom: 16px;
+  align-items: center;
+}
+
+.feature-search-container input {
+  flex: 1;
+  padding: 14px 16px;
+  border-radius: 12px;
+  font-size: 16px;
+}
+
+.feature-search-container input::placeholder {
+  color: #7f8ba3;
+}
+
+.feature-search-container .search-btn {
+  padding: 14px 18px;
+  border-radius: 12px;
+  min-width: 56px;
+  font-size: 20px;
+}
+
+.search-btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .sidebar-feature .search-results {
-  max-height: 220px;
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 320px;
+  overflow-y: auto;
 }
 
 .more-menu {
@@ -760,6 +789,70 @@ input, button { font-size: 1rem; }
 
 .project-link:hover {
   color: #ffffff;
+}
+
+.search-result-item {
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: #0f1b33;
+  border: 1px solid rgba(51, 88, 255, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  cursor: pointer;
+  transition: border-color 0.2s, background-color 0.2s, transform 0.2s;
+}
+
+.search-result-item:hover {
+  border-color: #3358ff;
+  background: #13254a;
+  transform: translateY(-1px);
+}
+
+.search-result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: #8aa0b8;
+}
+
+.search-result-author {
+  color: #9efeff;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.search-result-preview {
+  font-size: 15px;
+  color: #e6eaf2;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.search-result-empty {
+  padding: 16px;
+  border-radius: 12px;
+  background: #101d33;
+  color: #8aa0b8;
+  text-align: center;
+  font-size: 14px;
+}
+
+@media (max-width: 768px) {
+  .feature-search-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .feature-search-container .search-btn {
+    width: 100%;
+    min-width: unset;
+  }
+
+  .sidebar-feature .search-results {
+    max-height: none;
+  }
 }
 
 /* Phase 2: Form Styles */

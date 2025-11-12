@@ -699,24 +699,35 @@
     });
     
     if (results.length === 0) {
-      searchResults.innerHTML = '<div style="padding: 8px; color: #8aa0b8;">未找到匹配的消息</div>';
-      searchResults.style.display = 'block';
+      searchResults.innerHTML = '<div class="search-result-empty">未找到匹配的消息</div>';
+      searchResults.style.display = 'flex';
       return;
     }
     
     // 显示搜索结果（最多10条）
     const displayResults = results.slice(0, 10);
     searchResults.innerHTML = displayResults.map(msg => {
-      const preview = msg.text.length > 40 ? msg.text.substring(0, 40) + '...' : msg.text;
-      return `<div style="padding: 4px 8px; cursor: pointer; border-radius: 4px; margin-bottom: 4px; background: #0f192f;" 
-                     onclick="scrollToMessage(${msg.id})" 
-                     onmouseover="this.style.background='#1b2a4a'" 
-                     onmouseout="this.style.background='#0f192f'">
-                <div style="font-weight: 600; color: #3358ff; font-size: 0.85em;">${msg.nickname || '未知'}</div>
-                <div style="color: #a0a8b8; font-size: 0.8em;">${preview}</div>
-              </div>`;
+      const preview = msg.text.length > 80 ? msg.text.substring(0, 80) + '…' : msg.text;
+      const author = msg.nickname || '未知';
+      const timeStr = formatAbsoluteTime(msg.createdAt || Date.now());
+      return `<button type="button" class="search-result-item" data-message-id="${msg.id}">
+                <div class="search-result-header">
+                  <span class="search-result-author">${author}</span>
+                  <span>${timeStr}</span>
+                </div>
+                <div class="search-result-preview">${preview || '(无内容)'}</div>
+              </button>`;
     }).join('');
-    searchResults.style.display = 'block';
+    searchResults.style.display = 'flex';
+
+    searchResults.querySelectorAll(".search-result-item").forEach((item) => {
+      item.addEventListener("click", () => {
+        const messageId = Number(item.dataset.messageId);
+        if (messageId) {
+          window.scrollToMessage(messageId);
+        }
+      });
+    });
   }
   
   // Phase 3: 滚动到指定消息并高亮
