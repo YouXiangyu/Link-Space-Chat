@@ -14,6 +14,7 @@ const { buildHealthSnapshot } = require("./services/healthReporter");
 const roomState = require("./services/roomState");
 const rateLimiter = require("./services/rateLimiter");
 const messageService = require("./services/messageService");
+const { registerSocketHandlers } = require("./socket");
 
 const app = express();
 const server = http.createServer(app);
@@ -101,39 +102,18 @@ function getLanAddress() {
   return "localhost";
 }
 
-/**
- * 广播房间用户列表（需要io对象，保留在server.js中）
- * @param {string} roomId - 房间ID
- */
-function emitRoomUsers(roomId) {
-  const users = roomState.getUsers(roomId);
-  io.to(roomId).emit("room_users", users);
-}
+// Socket事件处理已移至 socket/index.js 和 socket/handlers/*.js
+// 注册所有Socket事件处理器
+registerSocketHandlers({
+  io,
+  roomState,
+  rateLimiter,
+  messageService,
+  db
+});
 
-/**
- * 立即从房间移除用户（不延迟）
- * @param {Object} socket - Socket.IO socket对象
- * @param {string} roomId - 房间ID
- */
-function removeUserFromRoomImmediate(socket, roomId) {
-  if (!roomId) return;
-  const removed = roomState.removeUserImmediate(socket.id, roomId, db);
-  if (removed) {
-    emitRoomUsers(roomId);
-    console.log(`User disconnected from room ${roomId}`);
-  }
-}
-
-/**
- * 延迟清理用户（断开连接后延迟3分钟删除，避免频繁创建）
- * @param {Object} socket - Socket.IO socket对象
- * @param {string} roomId - 房间ID
- */
-function removeUserFromRoom(socket, roomId) {
-  if (!roomId) return;
-  roomState.scheduleRemoval(socket.id, roomId, db);
-}
-
+// 以下代码已移至socket模块，保留注释供参考
+/*
 io.on("connection", (socket) => {
   let joinedRoomId = null;
   let nickname = null;
@@ -365,6 +345,7 @@ io.on("connection", (socket) => {
   });
 
 });
+*/
 
 // 端口和 ngrok 配置已移至 config/index.js
 
