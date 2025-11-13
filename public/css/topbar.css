@@ -1,0 +1,39 @@
+/* Topbar */
+.topbar {
+  flex-shrink: 0;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  background: #0e1526;
+  border-bottom: 1px solid #1b2a4a;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.sidebar-toggle-btn {
+  background: none;
+  border: none;
+  color: #e6eaf2;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0;
+  display: none; /* Hidden by default, shown in media query */
+}
+
+.brand {
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+}
+
+.room-id {
+  color: #9fb3c8;
+  font-size: 12px;
+}
+

@@ -1,0 +1,17 @@
+/* Main Page Layout */
+.page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Main content area */
+.container {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: row;
+  overflow: hidden;
+  position: relative; /* Needed for overlay positioning */
+}
+
