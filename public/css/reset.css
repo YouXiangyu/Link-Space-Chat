@@ -1,0 +1,14 @@
+/* General Reset & Theming */
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, 'Apple Color Emoji', 'Segoe UI Emoji';
+  background: #0b1220;
+  color: #e6eaf2;
+  font-size: 16px;
+}
+

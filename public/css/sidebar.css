@@ -1,0 +1,188 @@
+/* Sidebar */
+.sidebar {
+  flex-shrink: 0;
+  width: 320px;
+  border-right: 1px solid #1b2a4a;
+  padding: 16px;
+  overflow-y: auto;
+  transition: width 0.3s ease, margin-left 0.3s ease;
+  position: relative; /* For close button positioning */
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-content {
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+.sidebar-footer {
+  flex-shrink: 0;
+  text-align: center;
+  padding: 16px 0 0;
+  font-size: 12px;
+  color: #8aa0b8;
+}
+
+.sidebar-close-btn {
+    display: none; /* Hidden by default */
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    background: none;
+    border: none;
+    color: #9fb3c8;
+    font-size: 28px;
+    cursor: pointer;
+}
+
+/* --- Desktop Collapsed State --- */
+.sidebar-open .sidebar {
+  width: 320px;
+  margin-left: 0;
+}
+
+/* Sidebar Sections & Forms (shared styles) */
+.section { margin-bottom: 24px; }
+.section-title { font-size: 12px; color: #8aa0b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.section-card {
+  background: #0f192f;
+  border: 1px solid #1b2a4a;
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.015);
+}
+.user-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.user-list li { padding: 8px 10px; border-radius: 8px; background: #101d33; color: #d7e2f2; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border: 1px solid rgba(51, 88, 255, 0.08); }
+input, button { font-size: 1rem; }
+.join-form { display: flex; flex-direction: column; gap: 8px; }
+.join-form input { background: #0f192f; border: 1px solid #1b2a4a; color: #e6eaf2; border-radius: 8px; padding: 10px 12px; width: 100%; }
+.join-form button { background: #3358ff; color: white; border: none; padding: 10px 12px; border-radius: 8px; cursor: pointer; transition: background-color 0.2s; }
+.join-form button:hover { background: #2746d8; }
+
+.leave-btn {
+  width: 100%;
+  background: #4b1818;
+  color: #ff9e9e;
+  border: 1px solid #782d2d;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.leave-btn:hover {
+    background: #632222;
+    color: white;
+}
+
+.share-btn {
+  width: 100%;
+  background: #1f4b4b;
+  color: #9efeff;
+  border: 1px solid #2d7878;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-bottom: 8px; /* Add some space between the buttons */
+}
+
+.share-btn:hover {
+    background: #2d6363;
+    color: white;
+}
+
+.sidebar-main,
+.sidebar-feature {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.sidebar-feature {
+  flex-grow: 1;
+}
+
+.feature-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.feature-back-btn {
+  background: none;
+  border: none;
+  color: #e6eaf2;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+}
+
+.feature-back-btn:hover {
+  background: rgba(51, 88, 255, 0.15);
+}
+
+.feature-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #e6eaf2;
+}
+
+.feature-body .section-card {
+  margin-top: 0;
+}
+
+.more-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.more-menu-item {
+  width: 100%;
+  background: #101d33;
+  border: 1px solid rgba(51, 88, 255, 0.15);
+  color: #e6eaf2;
+  border-radius: 10px;
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 14px;
+  cursor: pointer;
+  transition: border-color 0.2s, background-color 0.2s, transform 0.2s;
+}
+
+.more-menu-item:hover {
+  border-color: #3358ff;
+  background: #142448;
+  transform: translateY(-1px);
+}
+
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Sidebar Scrollbar */
+.sidebar-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-content::-webkit-scrollbar-track {
+  background: #0e1526;
+}
+
+.sidebar-content::-webkit-scrollbar-thumb {
+  background: #1b2a4a;
+  border-radius: 3px;
+}
+
+.sidebar-content::-webkit-scrollbar-thumb:hover {
+  background: #2a3f6a;
+}
+

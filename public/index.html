@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Link Space Chat</title>
-  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="/css/styles.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
@@ -70,9 +70,9 @@
               <div class="section">
                 <div class="section-title">消息搜索</div>
                 <div class="section-card">
-                  <div class="search-container feature-search-container">
+                  <div class="feature-search-container">
                     <input type="text" id="searchInput" placeholder="请输入关键字…" maxlength="100" />
-                    <button id="searchBtn" class="search-btn search-btn-icon" title="搜索" aria-label="搜索">🔍</button>
+                    <button id="searchBtn" class="search-btn" title="搜索" aria-label="搜索">搜索</button>
                   </div>
                   <div id="searchResults" class="search-results" style="display: none;"></div>
                 </div>
@@ -231,6 +231,6 @@
   <!-- 引入 socket.io 和 qrcode 客户端脚本 -->
   <script src="/socket.io/socket.io.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
-  <script src="/app.js"></script>
+  <script type="module" src="/js/index.js"></script>
 </body>
 </html>
