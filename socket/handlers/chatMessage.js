@@ -45,7 +45,10 @@ function chatMessageHandler(socket, socketState, { io, rateLimiter, messageServi
       });
       
       // 将clientId一并回传用于前端平滑替换
-      const out = clientId ? { ...message, clientId } : message;
+      // 确保消息对象包含 roomId，用于客户端房间隔离
+      const out = clientId 
+        ? { ...message, clientId, roomId: socketState.joinedRoomId } 
+        : { ...message, roomId: socketState.joinedRoomId };
       io.to(socketState.joinedRoomId).emit("chat_message", out);
       ack(createSuccessResponse());
     } catch (e) {

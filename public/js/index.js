@@ -155,7 +155,9 @@ async function fetchHistory(roomId) {
     if (!res.ok) return;
     const data = await res.json();
     stateStore.clearMessages();
-    for (const m of data.messages) {
+    // 关键：过滤历史消息，只显示当前房间的消息（双重保险）
+    const currentRoomMessages = data.messages.filter(m => !m.roomId || m.roomId === roomId);
+    for (const m of currentRoomMessages) {
       appendMessage(elements.messages, stateStore.messageMap, startReply, m);
       stateStore.addMessage(m);
     }
@@ -224,12 +226,19 @@ function joinRoom(roomId, nickname, password = null) {
 socketClient.setCallbacks({
   onHistory: (list) => {
     stateStore.clearMessages();
-    for (const m of list) {
+    // 关键：过滤历史消息，只显示当前房间的消息
+    const currentRoomMessages = list.filter(m => !m.roomId || m.roomId === stateStore.currentRoomId);
+    for (const m of currentRoomMessages) {
       appendMessage(elements.messages, stateStore.messageMap, startReply, m);
       stateStore.addMessage(m);
     }
   },
   onChatMessage: (m) => {
+    // 关键：只显示当前房间的消息，防止跨房间消息泄露
+    if (m?.roomId && m.roomId !== stateStore.currentRoomId) {
+      console.warn('收到其他房间的消息，已忽略:', { messageRoomId: m.roomId, currentRoomId: stateStore.currentRoomId });
+      return;
+    }
     if (m?.clientId) {
       replaceMessage(elements.messages, m.clientId);
     }
