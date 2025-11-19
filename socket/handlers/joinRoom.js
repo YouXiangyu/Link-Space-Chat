@@ -45,8 +45,11 @@ function joinRoomHandler(socket, socketState, { io, roomState, messageService, d
         }
         // 若仍有密码（非空房情况），则按正常逻辑验证密码
         if (room.password) {
-          if (!password || password !== room.password) {
-            return ack(createErrorResponse(ErrorCodes.PASSWORD_REQUIRED, "该房间需要密码"));
+          if (!password) {
+            return ack(createErrorResponse(ErrorCodes.PASSWORD_REQUIRED, "当前房间需要密码，请重试密码"));
+          }
+          if (password !== room.password) {
+            return ack(createErrorResponse(ErrorCodes.PASSWORD_REQUIRED, "当前密码输入错误，请重试"));
           }
         }
       }

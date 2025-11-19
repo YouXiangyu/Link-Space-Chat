@@ -137,15 +137,15 @@ export const cyberTheme = {
       });
     }
     
-    // 主题按钮 - 显示主题选择（目前只有一个主题，显示提示）
+    // 主题按钮 - 提示信息
     const themeToggle = document.getElementById('theme-toggle');
     if (themeToggle) {
       themeToggle.addEventListener('click', () => {
-        alert('当前只有Cyber主题可用。更多主题正在开发中...');
+        alert('当前仅提供 Cyber 主题，更多主题正在设计中。');
       });
     }
     
-    // ESC键取消回复
+    // ESC键取消回复、关闭搜索面板
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         if (this.elements.replyBar && !this.elements.replyBar.classList.contains('hidden')) {

@@ -313,7 +313,17 @@ import { cyberTheme } from './cyberTheme.js';
           pendingJoin = { roomId, nickname };
           if (passwordModal) {
             passwordModal.classList.remove("hidden");
-            if (passwordInput) passwordInput.focus();
+            // 显示错误消息
+            const errorMsg = resp?.message || "当前房间需要密码，请重试密码";
+            const errorElement = document.getElementById("passwordErrorMsg");
+            if (errorElement) {
+              errorElement.textContent = errorMsg;
+              errorElement.classList.remove("hidden");
+            }
+            if (passwordInput) {
+              passwordInput.value = "";
+              passwordInput.focus();
+            }
           }
           return;
         }
@@ -373,7 +383,15 @@ import { cyberTheme } from './cyberTheme.js';
         cyberTheme.showLeaveButton();
       }
       
-      if (passwordModal) passwordModal.classList.add("hidden");
+      if (passwordModal) {
+        passwordModal.classList.add("hidden");
+        // 清除错误消息
+        const errorElement = document.getElementById("passwordErrorMsg");
+        if (errorElement) {
+          errorElement.classList.add("hidden");
+          errorElement.textContent = "";
+        }
+      }
       if (roomPasswordInput) roomPasswordInput.style.display = "none";
       
       if (cyberTheme && cyberTheme.closeMobileSidebar) {
@@ -489,20 +507,45 @@ import { cyberTheme } from './cyberTheme.js';
       e.preventDefault();
       if (!pendingJoin) return;
       const password = passwordInput ? passwordInput.value.trim() : "";
+      // 隐藏之前的错误消息
+      const errorElement = document.getElementById("passwordErrorMsg");
+      if (errorElement) {
+        errorElement.classList.add("hidden");
+      }
       if (!password) {
-        alert("请输入密码");
+        if (errorElement) {
+          errorElement.textContent = "当前房间需要密码，请重试密码";
+          errorElement.classList.remove("hidden");
+        }
         return;
       }
       joinRoom(pendingJoin.roomId, pendingJoin.nickname, password);
-      if (passwordInput) passwordInput.value = "";
     });
   }
 
   if (cancelPasswordBtn) {
     cancelPasswordBtn.addEventListener("click", () => {
-      if (passwordModal) passwordModal.classList.add("hidden");
+      if (passwordModal) {
+        passwordModal.classList.add("hidden");
+        // 清除错误消息
+        const errorElement = document.getElementById("passwordErrorMsg");
+        if (errorElement) {
+          errorElement.classList.add("hidden");
+          errorElement.textContent = "";
+        }
+      }
       pendingJoin = null;
       if (passwordInput) passwordInput.value = "";
+    });
+  }
+  
+  // 当用户开始输入密码时，隐藏错误消息
+  if (passwordInput) {
+    passwordInput.addEventListener("input", () => {
+      const errorElement = document.getElementById("passwordErrorMsg");
+      if (errorElement && !errorElement.classList.contains("hidden")) {
+        errorElement.classList.add("hidden");
+      }
     });
   }
 

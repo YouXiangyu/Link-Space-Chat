@@ -205,7 +205,17 @@ function joinRoom(roomId, nickname, password = null) {
       if (resp?.error === "PASSWORD_REQUIRED") {
         stateStore.pendingJoin = { roomId, nickname };
         elements.passwordModal.classList.add("visible");
-        elements.passwordInput.focus();
+        // 显示错误消息
+        const errorMsg = resp?.message || "当前房间需要密码，请重试密码";
+        const errorElement = document.getElementById("passwordErrorMsg");
+        if (errorElement) {
+          errorElement.textContent = errorMsg;
+          errorElement.classList.remove("hidden");
+        }
+        if (elements.passwordInput) {
+          elements.passwordInput.value = "";
+          elements.passwordInput.focus();
+        }
         return;
       }
       if (!stateStore.joined) showInitialGuidance(elements.messages);
@@ -230,6 +240,12 @@ function joinRoom(roomId, nickname, password = null) {
     elements.leaveBtn.style.display = "block";
     elements.shareBtn.style.display = "block";
     elements.passwordModal.classList.remove("visible");
+    // 清除错误消息
+    const errorElement = document.getElementById("passwordErrorMsg");
+    if (errorElement) {
+      errorElement.classList.add("hidden");
+      errorElement.textContent = "";
+    }
     elements.roomPasswordInput.style.display = "none";
     
     if (window.innerWidth <= 768) {
@@ -342,12 +358,19 @@ elements.passwordForm.addEventListener("submit", (e) => {
   e.preventDefault();
   if (!stateStore.pendingJoin) return;
   const password = elements.passwordInput.value.trim();
+  // 隐藏之前的错误消息
+  const errorElement = document.getElementById("passwordErrorMsg");
+  if (errorElement) {
+    errorElement.classList.add("hidden");
+  }
   if (!password) {
-    alert("请输入密码");
+    if (errorElement) {
+      errorElement.textContent = "当前房间需要密码，请重试密码";
+      errorElement.classList.remove("hidden");
+    }
     return;
   }
   joinRoom(stateStore.pendingJoin.roomId, stateStore.pendingJoin.nickname, password);
-  elements.passwordInput.value = "";
 });
 
 elements.cancelPasswordBtn.addEventListener("click", () => {
