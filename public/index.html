@@ -2,235 +2,483 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Link Space Chat</title>
-  <link rel="stylesheet" href="/styles.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LINK_SPACE // TERMINAL</title>
+  
+  <!-- 字体与图标 -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+  
+  <!-- Tailwind CSS & GSAP -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  
+  <!-- 配置主题色 -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'void': '#050505',
+            'acid': '#CCFF00',
+            'electric': '#7000FF',
+            'surface': '#0a0a0a',
+            'glow-acid': 'rgba(204, 255, 0, 0.3)',
+            'glow-electric': 'rgba(112, 0, 255, 0.3)'
+          },
+          fontFamily: {
+            'sans': ['"Space Grotesk"', 'sans-serif'],
+            'mono': ['"JetBrains Mono"', 'monospace'],
+          },
+          animation: {
+            'pulse-fast': 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'scan': 'scan 3s ease-in-out infinite',
+            'glow': 'glow 2s ease-in-out infinite alternate'
+          },
+          keyframes: {
+            scan: {
+              '0%, 100%': { transform: 'translateY(-100%)' },
+              '50%': { transform: 'translateY(100vh)' }
+            },
+            glow: {
+              '0%': { boxShadow: '0 0 5px rgba(204, 255, 0, 0.2)' },
+              '100%': { boxShadow: '0 0 20px rgba(204, 255, 0, 0.5)' }
+            }
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- 自定义样式 -->
+  <link rel="stylesheet" href="/cyberStyles.css" />
 </head>
-<body>
-  <div class="page">
-    <header class="topbar">
-      <div class="topbar-left">
-        <button id="sidebarToggleBtn" class="sidebar-toggle-btn">&#9776;</button>
-        <div class="brand" id="brandRoomInfoBtn" title="房间信息">Link Space Chat</div>
-      </div>
-      <div class="room-id" id="roomIdLabel"></div>
-    </header>
-    <main class="container">
-      <aside class="sidebar">
-        <div class="sidebar-content">
-          <button id="sidebarCloseBtn" class="sidebar-close-btn">&times;</button>
-          <div id="sidebarMain" class="sidebar-main">
-            <div class="section">
-              <div class="section-title">房间信息</div>
-              <div id="roomInfo" class="room-info section-card">
-                <div id="roomName" class="room-name"></div>
-                <div id="roomDescription" class="room-description"></div>
-                <div id="roomPasswordStatus" class="room-password-status"></div>
-                <button id="editRoomBtn" class="edit-room-btn" style="display: none;">编辑房间</button>
-              </div>
+<body class="h-screen w-screen flex flex-col relative font-sans bg-void text-white overflow-hidden">
+  
+  <!-- 自定义光标 -->
+  <div id="cursor" class="cyber-cursor"></div>
+  
+  <!-- 噪点背景层 -->
+  <div class="noise-layer"></div>
+  
+  <!-- 全屏登录/加入房间层 (初始显示，加入后隐藏) -->
+  <div id="login-overlay" class="absolute inset-0 z-50 bg-void flex items-center justify-center p-6">
+    <div class="w-full max-w-lg relative">
+      <!-- 装饰边框 -->
+      <div class="absolute -inset-1 bg-gradient-to-r from-acid to-electric opacity-30 blur"></div>
+      
+      <div class="relative bg-surface border border-white/10 p-10 overflow-hidden group">
+        <!-- 扫描线动画 -->
+        <div class="absolute top-0 left-0 w-full h-1 bg-acid/50 shadow-[0_0_15px_rgba(204,255,0,0.5)] animate-scan"></div>
+        
+        <h1 class="text-6xl font-bold mb-2 tracking-tighter">LINK_SPACE</h1>
+        <div class="text-acid font-mono text-sm mb-8 tracking-widest">SECURE CONNECTION PROTOCOL v1.0</div>
+        
+        <div class="space-y-6 font-mono">
+          <div>
+            <label class="block text-xs text-gray-500 mb-1">IDENTITY</label>
+            <input type="text" id="nickname" placeholder="ENTER ALIAS..." class="cyber-input w-full" maxlength="24" />
+          </div>
+          
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs text-gray-500 mb-1">TARGET_NODE (ROOM ID)</label>
+              <input type="text" id="roomIdInput" placeholder="GLOBAL" class="cyber-input w-full" maxlength="40" />
             </div>
-            <div class="section">
-              <div class="section-title">在线用户</div>
-              <div class="section-card">
-                <ul id="userList" class="user-list"></ul>
-              </div>
-            </div>
-            <div class="section">
-              <div class="section-title">加入房间</div>
-              <form id="joinForm" class="join-form section-card">
-                <input id="nickname" placeholder="昵称" maxlength="24" />
-                <input id="roomIdInput" placeholder="房间ID（留空使用URL）" maxlength="40" />
-                <input id="roomPasswordInput" type="password" placeholder="房间密码（如有）" maxlength="20" style="display: none;" />
-                <button type="submit">进入</button>
-              </form>
-            </div>
-            <div class="section">
-              <div class="section-card action-buttons">
-                <button id="shareBtn" class="share-btn">分享房间</button>
-                <button id="leaveBtn" class="leave-btn">退出房间</button>
-              </div>
-            </div>
-            <div class="section">
-              <div class="section-title">更多功能</div>
-              <div class="section-card more-menu">
-                <button class="more-menu-item" data-feature="search">消息搜索</button>
-                <button class="more-menu-item" data-feature="project">项目信息</button>
-              </div>
+            <div>
+              <label class="block text-xs text-gray-500 mb-1">ENCRYPTION KEY</label>
+              <input type="password" id="roomPasswordInput" placeholder="OPTIONAL" class="cyber-input w-full" maxlength="20" style="display: none;" />
             </div>
           </div>
-          <div id="sidebarFeature" class="sidebar-feature" style="display: none;">
-            <div class="feature-header section-card">
-              <button id="featureBackBtn" class="feature-back-btn">← 返回</button>
-              <span id="featureTitle" class="feature-title"></span>
-            </div>
-            <div id="featureSearch" class="feature-body" data-feature="search" style="display: none;">
-              <div class="section">
-                <div class="section-title">消息搜索</div>
-                <div class="section-card">
-                  <div class="search-container feature-search-container">
-                    <input type="text" id="searchInput" placeholder="请输入关键字…" maxlength="100" />
-                    <button id="searchBtn" class="search-btn search-btn-icon" title="搜索" aria-label="搜索">🔍</button>
-                  </div>
-                  <div id="searchResults" class="search-results" style="display: none;"></div>
-                </div>
-              </div>
-            </div>
-            <div id="featureProject" class="feature-body" data-feature="project" style="display: none;">
-              <div class="section">
-                <div class="section-title">项目信息</div>
-                <div class="section-card project-info-card">
-                  <p>访问我们的开源仓库以了解更多项目进展与文档：</p>
-                  <a href="https://github.com/YouXiangyu/Link-Space-Chat?tab=readme-ov-file" target="_blank" rel="noopener" class="project-link">
-                    GitHub 仓库：Link-Space-Chat
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
+          
+          <button id="joinBtn" type="button" class="cyber-button w-full bg-acid text-black font-bold p-4 hover:bg-white hover:scale-[1.01] transition-all uppercase flex justify-between items-center group-hover:shadow-[0_0_20px_rgba(204,255,0,0.4)]">
+            <span>Initialize Link</span>
+            <i class="ri-arrow-right-line"></i>
+          </button>
         </div>
-        <div class="sidebar-footer">
-          由 Do It Dui Team 开发
-        </div>
-      </aside>
-      <section class="chat">
-        <ul id="messages" class="messages"></ul>
-        <div id="rateLimitToast" class="rate-limit-toast">消息发送过于频繁，请稍后再试</div>
-        <!-- Phase 3: 回复框 -->
-        <div id="replyBox" class="reply-box" style="display: none;">
-          <div class="reply-preview">
-            <span class="reply-label">回复:</span>
-            <span id="replyPreviewText" class="reply-text"></span>
-            <button id="cancelReplyBtn" class="cancel-reply-btn" title="取消回复">×</button>
-          </div>
-        </div>
-        <form id="messageForm" class="message-form">
-          <input id="messageInput" autocomplete="off" placeholder="输入消息，回车发送" />
-          <button type="submit">发送</button>
-        </form>
-      </section>
-    </main>
-  </div>
-
-  <!-- Share Modal -->
-  <div id="shareModal" class="modal-overlay">
-    <div class="modal-content">
-      <button id="closeModalBtn" class="modal-close-btn">&times;</button>
-      <h3>分享房间</h3>
-      <div id="qrCode" class="qr-code"></div>
-      <div class="share-link-container">
-        <input type="text" id="shareLinkInput" readonly />
-        <button id="copyLinkBtn">复制</button>
       </div>
     </div>
   </div>
-
-  <!-- Edit Room Modal -->
-  <div id="editRoomModal" class="modal-overlay">
-    <div class="modal-content">
-      <button id="closeEditModalBtn" class="modal-close-btn">&times;</button>
-      <h3>编辑房间</h3>
-      <form id="editRoomForm" class="edit-room-form">
-        <div class="form-warning">确认保存后，房间名称、描述与密码将不可改动。</div>
-        <div class="form-group">
+  
+  <!-- 主聊天界面 (初始隐藏) -->
+  <main id="main-interface" class="flex-1 flex h-full opacity-0 scale-95 transition-all duration-1000 pointer-events-none blur-sm">
+    
+    <!-- 左侧边栏: HUD 信息 -->
+    <aside id="sidebar" class="w-20 md:w-64 border-r border-white/10 flex flex-col bg-black/50 backdrop-blur-md hidden md:flex">
+      <div class="p-6 border-b border-white/10 relative">
+        <button id="sidebar-close-btn" class="absolute top-4 right-4 text-acid hover:text-white transition-colors"><i class="ri-close-line text-xl"></i></button>
+        <div class="w-3 h-3 bg-acid rounded-full mb-2"></div>
+        <h2 class="font-mono text-xs text-gray-500">CONNECTED TO:</h2>
+        <div id="current-room-name" class="font-bold text-xl tracking-tight">LOBBY</div>
+        <div id="roomIdLabel" class="font-mono text-xs text-gray-600 mt-1"></div>
+      </div>
+      
+      <!-- 房间信息卡片 -->
+      <div id="roomInfo" class="p-4 border-b border-white/10 cursor-pointer hover:bg-white/5 transition-colors">
+        <div class="font-mono text-xs text-gray-500 mb-2">ROOM INFO</div>
+        <div id="roomName" class="text-sm font-bold mb-1"></div>
+        <div id="roomDescription" class="text-xs text-gray-500 mb-2 line-clamp-2"></div>
+        <div id="roomPasswordStatus" class="text-xs font-mono"></div>
+        <button id="editRoomBtn" class="cyber-button-small mt-2 w-full" style="display: none;">EDIT ROOM</button>
+      </div>
+      
+      <!-- 在线用户列表 -->
+      <div class="flex-1 overflow-y-auto p-4 cyber-scroll">
+        <div class="font-mono text-xs text-gray-600 mb-4">ACTIVE NODES</div>
+        <ul id="userList" class="space-y-3">
+          <!-- 用户列表项将在这里生成 -->
+        </ul>
+      </div>
+      
+      <!-- 底部操作区 -->
+      <div class="p-4 border-t border-white/10 space-y-2">
+        <button id="shareBtn" class="cyber-button-small w-full">SHARE ROOM</button>
+        <button id="leaveBtn" class="cyber-button-small w-full bg-red-900/30 border-red-500/50 hover:bg-red-900/50" style="display: none;">LEAVE ROOM</button>
+        <button id="searchToggleBtn" class="cyber-button-small w-full">SEARCH</button>
+        <button id="projectInfoBtn" class="cyber-button-small w-full">PROJECT INFO</button>
+        <div class="text-xs font-mono text-gray-600 mt-2">
+          UPTIME: <span id="uptime-counter">00:00:00</span>
+        </div>
+        <div class="text-xs font-mono text-gray-600 mt-4 pt-4 border-t border-white/5 text-center">
+          由 Do It Dui Team 开发
+        </div>
+      </div>
+    </aside>
+    
+    <!-- 移动端侧边栏遮罩 -->
+    <div id="sidebar-overlay" class="fixed inset-0 bg-black/80 z-40 md:hidden" style="display: none;"></div>
+    
+    <!-- 移动端侧边栏 -->
+    <aside id="mobile-sidebar" class="fixed left-0 top-0 h-full w-80 bg-surface border-r border-white/10 z-50 transform -translate-x-full transition-transform md:hidden overflow-y-auto">
+      <div class="p-4 border-b border-white/10 flex justify-between items-center">
+        <h2 class="font-mono text-sm">MENU</h2>
+        <button id="mobile-sidebar-close" class="text-acid"><i class="ri-close-line text-2xl"></i></button>
+      </div>
+      <div class="p-4">
+        <div id="mobile-roomInfo" class="mb-4">
+          <div class="font-mono text-xs text-gray-500 mb-2">ROOM INFO</div>
+          <div id="mobile-roomName" class="text-sm font-bold mb-1"></div>
+          <div id="mobile-roomDescription" class="text-xs text-gray-500 mb-2"></div>
+          <div id="mobile-roomPasswordStatus" class="text-xs font-mono mb-2"></div>
+          <button id="mobile-editRoomBtn" class="cyber-button-small w-full" style="display: none;">EDIT ROOM</button>
+        </div>
+        <div class="mb-4">
+          <div class="font-mono text-xs text-gray-500 mb-2">ACTIVE NODES</div>
+          <ul id="mobile-userList" class="space-y-2"></ul>
+        </div>
+        <div class="space-y-2">
+          <button id="mobile-shareBtn" class="cyber-button-small w-full">SHARE ROOM</button>
+          <button id="mobile-leaveBtn" class="cyber-button-small w-full bg-red-900/30 border-red-500/50" style="display: none;">LEAVE ROOM</button>
+          <button id="mobile-searchToggleBtn" class="cyber-button-small w-full">SEARCH</button>
+          <button id="mobile-projectInfoBtn" class="cyber-button-small w-full">PROJECT INFO</button>
+        </div>
+        <div class="text-xs font-mono text-gray-600 mt-4 pt-4 border-t border-white/5 text-center px-4">
+          由 Do It Dui Team 开发
+        </div>
+      </div>
+    </aside>
+    
+    <!-- 中间: 聊天流 -->
+    <section class="flex-1 flex flex-col relative overflow-hidden">
+      
+      <!-- 顶部状态栏 -->
+      <header class="h-16 border-b border-white/10 flex items-center justify-between px-6 bg-black/20 backdrop-blur flex-shrink-0">
+        <div class="flex items-center gap-4">
+          <button id="mobile-menu-btn" class="md:hidden text-acid hover:text-white transition-colors"><i class="ri-menu-line text-xl"></i></button>
+          <span class="font-mono text-xs text-electric">Encrypted // TLS 1.3</span>
+        </div>
+        <div class="flex gap-4">
+          <button id="theme-toggle" class="hover:text-acid transition-colors" title="切换主题"><i class="ri-contrast-drop-line text-xl"></i></button>
+          <button id="settings-toggle" class="hover:text-acid transition-colors" title="设置"><i class="ri-settings-3-line text-xl"></i></button>
+        </div>
+      </header>
+      
+      <!-- 消息容器 -->
+      <div id="messages" class="flex-1 overflow-y-auto p-6 space-y-6 cyber-scroll relative">
+        <!-- 欢迎信息 -->
+        <div id="initial-guidance" class="flex flex-col items-center justify-center opacity-30 py-10 select-none pointer-events-none">
+          <i class="ri-code-s-slash-line text-6xl mb-4"></i>
+          <span class="font-mono text-sm">SYSTEM READY. AWAITING INPUT.</span>
+        </div>
+      </div>
+      
+      <!-- 回复提示栏 (默认隐藏) -->
+      <div id="reply-bar" class="hidden bg-surface border-t border-white/10 p-2 px-6 flex justify-between items-center text-xs font-mono text-acid flex-shrink-0">
+        <span id="replyPreviewText">REPLYING TO TARGET...</span>
+        <button id="cancelReplyBtn" class="hover:text-white transition-colors">CANCEL [ESC]</button>
+      </div>
+      
+      <!-- 频率限制提示 -->
+      <div id="rateLimitToast" class="cyber-toast hidden">MESSAGE RATE LIMIT EXCEEDED</div>
+      
+      <!-- 底部输入区 -->
+      <div class="p-4 md:p-6 pb-8 bg-gradient-to-t from-void to-transparent flex-shrink-0">
+        <form id="messageForm" class="relative flex gap-4 max-w-5xl mx-auto cyber-input-group">
+          <div class="flex-1 relative group">
+            <!-- 输入框装饰 -->
+            <div class="absolute top-0 left-0 w-2 h-2 border-t border-l border-acid opacity-50 group-hover:opacity-100 transition-opacity"></div>
+            <div class="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-acid opacity-50 group-hover:opacity-100 transition-opacity"></div>
+            
+            <input 
+              type="text" 
+              id="messageInput" 
+              autocomplete="off"
+              placeholder="EXECUTE COMMAND..." 
+              class="cyber-input w-full"
+            />
+          </div>
+          <button type="submit" id="sendButton" class="cyber-send-button px-8 font-mono font-bold">
+            SEND <i class="ri-send-plane-fill ml-2"></i>
+          </button>
+        </form>
+      </div>
+    </section>
+  </main>
+  
+  <!-- 分享房间模态框 -->
+  <div id="shareModal" class="cyber-modal hidden">
+    <div class="cyber-modal-content">
+      <button id="closeModalBtn" class="cyber-modal-close">&times;</button>
+      <h3 class="cyber-modal-title">SHARE ROOM</h3>
+      <div id="qrCode" class="cyber-qr-code"></div>
+      <div class="cyber-share-link">
+        <input type="text" id="shareLinkInput" readonly class="cyber-input" />
+        <button id="copyLinkBtn" class="cyber-button-small">COPY</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 编辑房间模态框 -->
+  <div id="editRoomModal" class="cyber-modal hidden">
+    <div class="cyber-modal-content">
+      <button id="closeEditModalBtn" class="cyber-modal-close">&times;</button>
+      <h3 class="cyber-modal-title">EDIT ROOM</h3>
+      <form id="editRoomForm" class="cyber-form">
+        <div class="cyber-form-warning">确认保存后，房间名称、描述与密码将不可改动。</div>
+        <div class="cyber-form-group">
           <label>房间名称</label>
-          <input type="text" id="editRoomName" placeholder="房间名称（可选）" maxlength="50" />
+          <input type="text" id="editRoomName" placeholder="房间名称（可选）" maxlength="50" class="cyber-input" />
         </div>
-        <div class="form-group">
+        <div class="cyber-form-group">
           <label>房间描述</label>
-          <textarea id="editRoomDescription" placeholder="房间描述（可选）" maxlength="200" rows="3"></textarea>
+          <textarea id="editRoomDescription" placeholder="房间描述（可选）" maxlength="200" rows="3" class="cyber-input"></textarea>
         </div>
-        <div class="form-group">
+        <div class="cyber-form-group">
           <label>房间密码</label>
-          <input type="password" id="editRoomPassword" placeholder="留空表示开放房间" maxlength="20" />
+          <input type="password" id="editRoomPassword" placeholder="留空表示开放房间" maxlength="20" class="cyber-input" />
           <small>设置密码后，只有知道密码的用户才能加入。默认房间（ID为"1"）不能设置密码。</small>
         </div>
-        <div class="form-group" id="editPasswordConfirmGroup" style="display: none;">
+        <div class="cyber-form-group" id="editPasswordConfirmGroup" style="display: none;">
           <label>
             <input type="checkbox" id="editPasswordConfirm" />
             修改密码并清空聊天记录
           </label>
           <small>为保护隐私，修改密码会立即清空本房间全部聊天记录。</small>
         </div>
-        <div class="form-actions">
-          <button type="submit">保存</button>
-          <button type="button" id="cancelEditBtn">取消</button>
+        <div class="cyber-form-actions">
+          <button type="submit" class="cyber-button">SAVE</button>
+          <button type="button" id="cancelEditBtn" class="cyber-button-cancel">CANCEL</button>
         </div>
       </form>
     </div>
   </div>
-
-  <!-- Room Info Modal (所有已加入用户可见) -->
-  <div id="roomInfoModal" class="modal-overlay">
-    <div class="modal-content">
-      <button id="closeRoomInfoModalBtn" class="modal-close-btn">&times;</button>
-      <h3>房间信息</h3>
-      <div class="form-group">
-        <label>名称</label>
-        <div id="infoRoomName" class="readonly-field"></div>
-      </div>
-      <div class="form-group">
-        <label>描述</label>
-        <div id="infoRoomDescription" class="readonly-field"></div>
-      </div>
-      <div class="form-group">
-        <label>密码</label>
-        <div class="password-visibility">
-          <input type="password" id="infoRoomPassword" class="readonly-input" readonly value="" />
-          <button id="togglePasswordVisibleBtn" type="button" class="icon-btn" aria-label="toggle password">👁</button>
+  
+  <!-- 密码输入模态框 -->
+  <div id="passwordModal" class="cyber-modal hidden">
+    <div class="cyber-modal-content">
+      <h3 class="cyber-modal-title">PASSWORD REQUIRED</h3>
+      <p class="text-gray-400 mb-4">该房间需要密码才能加入</p>
+      <form id="passwordForm" class="cyber-form">
+        <div class="cyber-form-group">
+          <input type="password" id="passwordInput" placeholder="请输入房间密码" maxlength="20" class="cyber-input" autofocus />
         </div>
-        <small>仅已加入本房间的用户可见。默认隐藏，点击小眼睛切换显隐。</small>
-      </div>
-    </div>
-  </div>
-
-  <!-- Password Modal -->
-  <div id="passwordModal" class="modal-overlay">
-    <div class="modal-content">
-      <h3>需要密码</h3>
-      <p>该房间需要密码才能加入</p>
-      <form id="passwordForm" class="password-form">
-        <input type="password" id="passwordInput" placeholder="请输入房间密码" maxlength="20" autofocus />
-        <div class="form-actions">
-          <button type="submit">确认</button>
-          <button type="button" id="cancelPasswordBtn">取消</button>
+        <div class="cyber-form-actions">
+          <button type="submit" class="cyber-button">CONFIRM</button>
+          <button type="button" id="cancelPasswordBtn" class="cyber-button-cancel">CANCEL</button>
         </div>
       </form>
     </div>
   </div>
-
-  <!-- Prefill Join Modal (从链接预填信息进入) -->
-  <div id="prefillJoinModal" class="modal-overlay">
-    <div class="modal-content">
-      <button type="button" class="modal-close-btn" id="prefillCancelBtn">&times;</button>
-      <h3>加入房间</h3>
-      <div class="form-group">
-        <label>昵称</label>
-        <input type="text" id="prefillNickname" placeholder="请输入昵称" maxlength="24" />
+  
+  <!-- 搜索面板 -->
+  <div id="searchPanel" class="cyber-search-panel hidden">
+    <div class="cyber-search-header">
+      <h3 class="font-mono text-sm font-bold">MESSAGE SEARCH</h3>
+      <button id="closeSearchBtn" class="text-acid hover:text-white"><i class="ri-close-line text-xl"></i></button>
+    </div>
+    <div class="cyber-search-body">
+      <div class="cyber-search-input-group">
+        <input type="text" id="searchInput" placeholder="ENTER KEYWORD..." maxlength="100" class="cyber-input" />
+        <button id="searchBtn" class="cyber-button-small"><i class="ri-search-line"></i></button>
       </div>
-      <div class="form-group">
-        <label>房间ID</label>
-        <input type="text" id="prefillRoomId" placeholder="房间ID" maxlength="40" />
-      </div>
-      <div class="form-group">
-        <label>房间密码</label>
-        <input type="password" id="prefillPassword" placeholder="如有密码请填写" maxlength="20" />
-      </div>
-      <div class="form-group">
-        <label>房间介绍</label>
-        <textarea id="prefillDescription" class="readonly-field" placeholder="（仅展示）" rows="2" readonly></textarea>
-      </div>
-      <div class="form-actions">
-        <button type="button" id="prefillConfirmBtn">确认进入</button>
+      <div id="searchResults" class="cyber-search-results" style="display: none;"></div>
+    </div>
+  </div>
+  
+  <!-- 预填加入模态框 -->
+  <div id="prefillJoinModal" class="cyber-modal hidden">
+    <div class="cyber-modal-content">
+      <button type="button" class="cyber-modal-close" id="prefillCancelBtn">&times;</button>
+      <h3 class="cyber-modal-title">JOIN ROOM</h3>
+      <form class="cyber-form">
+        <div class="cyber-form-group">
+          <label>昵称</label>
+          <input type="text" id="prefillNickname" placeholder="请输入昵称" maxlength="24" class="cyber-input" />
+        </div>
+        <div class="cyber-form-group">
+          <label>房间ID</label>
+          <input type="text" id="prefillRoomId" placeholder="房间ID" maxlength="40" class="cyber-input" />
+        </div>
+        <div class="cyber-form-group">
+          <label>房间密码</label>
+          <input type="password" id="prefillPassword" placeholder="如有密码请填写" maxlength="20" class="cyber-input" />
+        </div>
+        <div class="cyber-form-actions">
+          <button type="button" id="prefillConfirmBtn" class="cyber-button">CONFIRM</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  
+  <!-- 项目信息模态框 -->
+  <div id="projectInfoModal" class="cyber-modal hidden">
+    <div class="cyber-modal-content">
+      <button type="button" class="cyber-modal-close" id="closeProjectInfoBtn">&times;</button>
+      <h3 class="cyber-modal-title">PROJECT INFO</h3>
+      <div class="cyber-form">
+        <div class="cyber-form-group">
+          <p class="text-sm text-gray-300 mb-4">访问我们的开源仓库以了解更多项目进展与文档：</p>
+          <a href="https://github.com/YouXiangyu/Link-Space-Chat?tab=readme-ov-file" target="_blank" rel="noopener" class="cyber-project-link">
+            GitHub 仓库：Link-Space-Chat
+          </a>
+        </div>
+        <div class="cyber-form-group mt-4">
+          <p class="text-xs text-gray-500 text-center">由 Do It Dui Team 开发</p>
+        </div>
       </div>
     </div>
   </div>
-
-  <!-- 引入 socket.io 和 qrcode 客户端脚本 -->
+  
+  <!-- 引入 socket.io 和 qrcode -->
   <script src="/socket.io/socket.io.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
-  <script src="/app.js"></script>
+  
+  <!-- 临时内联脚本，确保按钮能立即响应 -->
+  <script>
+    // 全局调试标志
+    window.DEBUG = true;
+    
+    // 确保按钮在模块加载前就能响应
+    function setupJoinButton() {
+      const joinBtn = document.getElementById('joinBtn');
+      const nicknameInput = document.getElementById('nickname');
+      const roomIdInput = document.getElementById('roomIdInput');
+      const roomPasswordInput = document.getElementById('roomPasswordInput');
+      
+      console.log('[Setup] Looking for join button...', { 
+        joinBtn: !!joinBtn, 
+        nicknameInput: !!nicknameInput, 
+        roomIdInput: !!roomIdInput 
+      });
+      
+      if (joinBtn) {
+        // 检查是否已经绑定过
+        if (joinBtn.dataset.listenerAttached === 'true') {
+          console.log('[Setup] Listener already attached, skipping');
+          return;
+        }
+        
+        joinBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log('[Click] Join button clicked!');
+          
+          const nickname = nicknameInput ? nicknameInput.value.trim() : '';
+          console.log('[Click] Nickname:', nickname);
+          
+          if (!nickname) {
+            alert('请输入一个昵称');
+            return;
+          }
+          
+          let roomId = (roomIdInput ? roomIdInput.value.trim() : '') || '';
+          if (!roomId) {
+            roomId = '1';
+          }
+          console.log('[Click] Room ID:', roomId);
+          
+          const password = (roomPasswordInput && roomPasswordInput.style.display !== 'none') 
+            ? (roomPasswordInput.value.trim() || null) 
+            : null;
+          
+          console.log('[Click] Attempting to join:', { roomId, nickname, hasPassword: !!password });
+          
+          // 检查socket是否可用
+          if (typeof io === 'undefined') {
+            console.error('[Click] Socket.io not loaded!');
+            alert('Socket.io未加载，请刷新页面重试');
+            return;
+          }
+          
+          // 触发自定义事件，让app.js处理
+          const joinEvent = new CustomEvent('joinRoomRequest', {
+            detail: { roomId, nickname, password },
+            bubbles: true,
+            cancelable: true
+          });
+          
+          console.log('[Click] Dispatching joinRoomRequest event');
+          const dispatched = window.dispatchEvent(joinEvent);
+          console.log('[Click] Event dispatched:', dispatched);
+          
+          // 如果事件没有被处理，等待app.js加载
+          setTimeout(() => {
+            if (!window.joinRoomHandled) {
+              console.warn('[Click] Event not handled after 1s, app.js may not be loaded yet');
+              console.warn('[Click] Retrying event dispatch...');
+              // 再次尝试触发事件
+              const retryEvent = new CustomEvent('joinRoomRequest', {
+                detail: { roomId, nickname, password },
+                bubbles: true,
+                cancelable: true
+              });
+              window.dispatchEvent(retryEvent);
+            } else {
+              console.log('[Click] Event was handled successfully');
+            }
+            // 重置标志，允许下次点击
+            window.joinRoomHandled = false;
+          }, 1000);
+        });
+        
+        joinBtn.dataset.listenerAttached = 'true';
+        console.log('[Setup] Join button event listener attached successfully');
+      } else {
+        console.error('[Setup] Join button not found!');
+        // 延迟重试
+        setTimeout(setupJoinButton, 200);
+      }
+    }
+    
+    // 立即尝试设置
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', setupJoinButton);
+    } else {
+      setupJoinButton();
+    }
+    
+    // 也监听window.load事件作为备用
+    window.addEventListener('load', function() {
+      console.log('[Load] Window loaded, checking join button again...');
+      setTimeout(setupJoinButton, 100);
+    });
+  </script>
+  
+  <!-- 引入适配器脚本 -->
+  <script type="module" src="/uiAdapter.js"></script>
+  <script type="module" src="/cyberTheme.js"></script>
+  <script type="module" src="/app.js"></script>
 </body>
 </html>
