@@ -14,15 +14,15 @@
 
 .form-group label {
   font-size: 13px;
-  color: #9fb3c8;
+  color: var(--text-secondary);
   font-weight: 500;
 }
 
 .form-group input,
 .form-group textarea {
-  background: #0f192f;
-  border: 1px solid #1b2a4a;
-  color: #e6eaf2;
+  background: var(--bg-input);
+  border: 1px solid var(--border-primary);
+  color: var(--text-primary);
   border-radius: 8px;
   padding: 10px 12px;
   font-size: 14px;
@@ -33,13 +33,13 @@
 .form-group input:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: #3358ff;
-  box-shadow: 0 0 0 3px rgba(51, 88, 255, 0.1);
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px var(--accent-light);
 }
 
 .form-group small {
   font-size: 11px;
-  color: #8aa0b8;
+  color: var(--text-secondary);
   line-height: 1.4;
 }
 
@@ -68,21 +68,36 @@
 }
 
 .form-actions button[type="submit"] {
-  background: #3358ff;
+  background: var(--accent-primary);
   color: white;
 }
 
 .form-actions button[type="submit"]:hover {
-  background: #2746d8;
+  background: var(--accent-hover);
 }
 
 .form-actions button[type="button"] {
-  background: #1b2a4a;
-  color: #9fb3c8;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-primary);
 }
 
 .form-actions button[type="button"]:hover {
-  background: #2a3f6a;
-  color: #e6eaf2;
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+/* Checkbox样式 */
+.form-group input[type="checkbox"] {
+  width: auto;
+  height: auto;
+  padding: 0;
+  margin-right: 8px;
+  cursor: pointer;
+  accent-color: var(--accent-primary);
+}
+
+.form-group label input[type="checkbox"] {
+  margin-right: 8px;
 }
 

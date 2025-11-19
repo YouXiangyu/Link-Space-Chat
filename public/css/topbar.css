@@ -6,8 +6,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 16px;
-  background: #0e1526;
-  border-bottom: 1px solid #1b2a4a;
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border-primary);
 }
 
 .topbar-left {
@@ -19,7 +19,7 @@
 .sidebar-toggle-btn {
   background: none;
   border: none;
-  color: #e6eaf2;
+  color: var(--text-primary);
   font-size: 24px;
   cursor: pointer;
   padding: 0;
@@ -30,10 +30,11 @@
   font-weight: 600;
   letter-spacing: 0.3px;
   cursor: pointer;
+  color: var(--text-primary);
 }
 
 .room-id {
-  color: #9fb3c8;
+  color: var(--text-secondary);
   font-size: 12px;
 }
 

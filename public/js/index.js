@@ -7,6 +7,7 @@ import { StateStore } from './stateStore.js';
 import { SocketClient } from './socketClient.js';
 import { showInitialGuidance, appendMessage, replaceMessage, updateRoomInfo, updateUserList } from './uiRenderer.js';
 import { performSearch, scrollToMessage } from './search.js';
+import { initTheme, createThemeUI, updateThemeUI, getCurrentTheme } from './theme.js';
 
 // 初始化状态存储
 const stateStore = new StateStore();
@@ -52,7 +53,9 @@ const elements = {
   featureBackBtn: el("featureBackBtn"),
   featureTitle: el("featureTitle"),
   featureSearchSection: el("featureSearch"),
+  featureThemeSection: el("featureTheme"),
   featureProjectSection: el("featureProject"),
+  themeOptions: el("themeOptions"),
   editRoomModal: el("editRoomModal"),
   closeEditModalBtn: el("closeEditModalBtn"),
   editRoomForm: el("editRoomForm"),
@@ -87,11 +90,13 @@ const socketClient = new SocketClient();
 // 功能切换
 const featureSections = {
   search: elements.featureSearchSection,
+  theme: elements.featureThemeSection,
   project: elements.featureProjectSection
 };
 
 const featureTitles = {
   search: "消息搜索",
+  theme: "主题切换",
   project: "项目信息"
 };
 
@@ -112,6 +117,17 @@ function openFeature(featureKey) {
   }
   if (featureKey === "search" && elements.searchInput) {
     elements.searchInput.focus();
+  }
+  if (featureKey === "theme" && elements.themeOptions) {
+    // 初始化主题UI（如果尚未初始化）
+    if (!elements.themeOptions.hasChildNodes()) {
+      createThemeUI(elements.themeOptions, (theme) => {
+        updateThemeUI(elements.themeOptions, theme);
+      });
+    } else {
+      // 更新UI以反映当前主题
+      updateThemeUI(elements.themeOptions, getCurrentTheme());
+    }
   }
 }
 
@@ -633,6 +649,9 @@ if (!stateStore.currentRoomId) {
 if (stateStore.currentRoomId && elements.roomIdInput) {
   elements.roomIdInput.value = stateStore.currentRoomId;
 }
+
+// 初始化主题
+initTheme();
 
 openPrefillModalIfNeeded();
 

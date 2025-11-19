@@ -6,6 +6,9 @@
 /* 基础重置和主题 */
 @import url('./reset.css');
 
+/* 主题样式 */
+@import url('./theme.css');
+
 /* 布局 */
 @import url('./layout.css');
 

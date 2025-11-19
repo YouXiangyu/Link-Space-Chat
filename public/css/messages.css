@@ -1,7 +1,7 @@
 /* Phase 2: Enhanced Message Styles */
 .messages li.message {
-  background: #0f192f;
-  border: 1px solid #1b2a4a;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
   padding: 12px 16px;
   margin-bottom: 12px;
   border-radius: 12px;
@@ -10,14 +10,14 @@
 }
 
 .messages li.message:hover {
-  background: #131d35;
-  border-color: #2a3f6a;
+  background: var(--bg-hover);
+  border-color: var(--border-hover);
 }
 
 .messages li.message-emoji {
   /* 与普通消息保持一致显示（暂不额外高亮） */
-  background: #0f192f;
-  border-color: #1b2a4a;
+  background: var(--bg-secondary);
+  border-color: var(--border-primary);
 }
 
 .message-wrapper {
@@ -28,7 +28,7 @@
 
 .message-time {
   font-size: 11px;
-  color: #8aa0b8;
+  color: var(--text-secondary);
   white-space: nowrap;
   flex-shrink: 0;
   margin-top: 2px;
@@ -41,12 +41,12 @@
 
 .message-nickname {
   font-weight: 600;
-  color: #7a9fff;
+  color: var(--text-accent);
   margin-right: 4px;
 }
 
 .message-text {
-  color: #e6eaf2;
+  color: var(--text-primary);
   word-wrap: break-word;
   line-height: 1.5;
   white-space: pre-wrap; /* 保留换行并防止XSS时主动插入HTML */
@@ -64,7 +64,7 @@
 
 .message-status {
   font-size: 11px;
-  color: #8aa0b8;
+  color: var(--text-secondary);
   font-style: italic;
   margin-left: auto;
 }
@@ -117,7 +117,7 @@
 }
 
 .message-reply-text {
-  color: #a0a8b8;
+  color: var(--text-tertiary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -127,9 +127,9 @@
 /* Phase 3: 回复框 */
 .reply-box {
   padding: 8px 16px;
-  background: #0f192f;
-  border-top: 1px solid #1b2a4a;
-  border-bottom: 1px solid #1b2a4a;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border-primary);
+  border-bottom: 1px solid var(--border-primary);
 }
 
 .reply-preview {
@@ -137,20 +137,20 @@
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  background: #0a1520;
+  background: var(--bg-primary);
   border-radius: 6px;
-  border-left: 3px solid #3358ff;
+  border-left: 3px solid var(--accent-primary);
 }
 
 .reply-label {
-  color: #3358ff;
+  color: var(--accent-primary);
   font-weight: 600;
   font-size: 0.9em;
 }
 
 .reply-text {
   flex: 1;
-  color: #a0a8b8;
+  color: var(--text-tertiary);
   font-size: 0.9em;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -160,7 +160,7 @@
 .cancel-reply-btn {
   background: none;
   border: none;
-  color: #a0a8b8;
+  color: var(--text-tertiary);
   font-size: 20px;
   cursor: pointer;
   padding: 0;
@@ -174,8 +174,8 @@
 }
 
 .cancel-reply-btn:hover {
-  background: #1b2a4a;
-  color: #e6eaf2;
+  background: var(--border-primary);
+  color: var(--text-primary);
 }
 
 /* Phase 2: Animation Enhancements */
