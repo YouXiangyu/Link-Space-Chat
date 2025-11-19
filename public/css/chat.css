@@ -1,0 +1,51 @@
+/* Chat Area */
+.chat {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.messages { flex-grow: 1; list-style: none; padding: 16px; margin: 0; overflow-y: auto; }
+.messages li { padding: 8px 12px; margin-bottom: 8px; border-radius: 8px; background: var(--bg-secondary); word-wrap: break-word; }
+
+.messages li.guidance {
+  background: none;
+  color: var(--text-secondary);
+  text-align: center;
+  padding: 24px 16px;
+  line-height: 1.6;
+}
+
+.message-form { flex-shrink: 0; display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--border-primary); position: relative; }
+.message-form input { flex-grow: 1; background: var(--bg-input); border: 1px solid var(--border-primary); color: var(--text-primary); border-radius: 8px; padding: 12px; }
+.message-form button { background: var(--accent-primary); color: white; border: none; padding: 12px 16px; border-radius: 8px; cursor: pointer; transition: background-color 0.2s; }
+.message-form button:hover { background: var(--accent-hover); }
+
+/* Phase 2: Input Enhancement */
+.message-form input {
+  font-family: inherit;
+}
+
+.message-form input::placeholder {
+  color: var(--text-tertiary);
+}
+
+/* Phase 2: Scrollbar Styling */
+.messages::-webkit-scrollbar {
+  width: 8px;
+}
+
+.messages::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+.messages::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 4px;
+}
+
+.messages::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+

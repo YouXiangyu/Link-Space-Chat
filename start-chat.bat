@@ -10,6 +10,25 @@ REM Arg 2: Port number (only used when Arg 1 is "ngrok")
 set "ARG1=%1"
 set "ARG2=%2"
 
+REM --- Check if dependencies are installed ---
+if not exist "node_modules\" (
+    echo.
+    echo =================================================================
+    echo Dependencies not found. Installing dependencies...
+    echo =================================================================
+    echo.
+    call npm install
+    if errorlevel 1 (
+        echo.
+        echo ERROR: Failed to install dependencies. Please check your Node.js installation.
+        pause
+        exit /b 1
+    )
+    echo.
+    echo Dependencies installed successfully!
+    echo.
+)
+
 REM --- Execution ---
 echo.
 echo Starting server...
