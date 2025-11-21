@@ -1,20 +1,23 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>LINK_SPACE // TERMINAL</title>
-  
+
   <!-- 字体与图标 -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@300;500;700&display=swap"
+    rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
-  
+
   <!-- Tailwind CSS & GSAP -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-  
+
   <!-- 配置主题色 -->
   <script>
     tailwind.config = {
@@ -51,49 +54,57 @@
       }
     }
   </script>
-  
+
   <!-- 自定义样式 -->
   <link rel="stylesheet" href="/cyberStyles.css" />
+  <link rel="stylesheet" href="/lightStyles.css" />
 </head>
+
 <body class="h-screen w-screen flex flex-col relative font-sans bg-void text-white overflow-hidden">
-  
+
   <!-- 自定义光标 -->
   <div id="cursor" class="cyber-cursor"></div>
-  
+
   <!-- 噪点背景层 -->
   <div class="noise-layer"></div>
-  
+
   <!-- 全屏登录/加入房间层 (初始显示，加入后隐藏) -->
   <div id="login-overlay" class="absolute inset-0 z-50 bg-void flex items-center justify-center p-6">
     <div class="w-full max-w-lg relative">
       <!-- 装饰边框 -->
       <div class="absolute -inset-1 bg-gradient-to-r from-acid to-electric opacity-30 blur"></div>
-      
+
       <div class="relative bg-surface border border-white/10 p-10 overflow-hidden group">
         <!-- 扫描线动画 -->
-        <div class="absolute top-0 left-0 w-full h-1 bg-acid/50 shadow-[0_0_15px_rgba(204,255,0,0.5)] animate-scan"></div>
-        
+        <div class="absolute top-0 left-0 w-full h-1 bg-acid/50 shadow-[0_0_15px_rgba(204,255,0,0.5)] animate-scan">
+        </div>
+
         <h1 class="text-6xl font-bold mb-2 tracking-tighter">LINK_SPACE</h1>
-        <div class="text-acid font-mono text-sm mb-8 tracking-widest" data-i18n="secureConnectionProtocol">SECURE CONNECTION PROTOCOL v1.0</div>
-        
+        <div class="text-acid font-mono text-sm mb-8 tracking-widest" data-i18n="secureConnectionProtocol">SECURE
+          CONNECTION PROTOCOL v1.0</div>
+
         <div class="space-y-6 font-mono">
           <div>
             <label class="block text-xs text-gray-500 mb-1" data-i18n="identity">IDENTITY</label>
-            <input type="text" id="nickname" data-i18n-placeholder="enterAlias" placeholder="ENTER ALIAS..." class="cyber-input w-full" maxlength="24" />
+            <input type="text" id="nickname" data-i18n-placeholder="enterAlias" placeholder="ENTER ALIAS..."
+              class="cyber-input w-full" maxlength="24" />
           </div>
-          
+
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-xs text-gray-500 mb-1" data-i18n="targetNode">TARGET_NODE (ROOM ID)</label>
-              <input type="text" id="roomIdInput" data-i18n-placeholder="global" placeholder="GLOBAL" class="cyber-input w-full" maxlength="40" />
+              <input type="text" id="roomIdInput" data-i18n-placeholder="global" placeholder="GLOBAL"
+                class="cyber-input w-full" maxlength="40" />
             </div>
             <div>
               <label class="block text-xs text-gray-500 mb-1" data-i18n="encryptionKey">ENCRYPTION KEY</label>
-              <input type="password" id="roomPasswordInput" data-i18n-placeholder="optional" placeholder="OPTIONAL" class="cyber-input w-full" maxlength="20" />
+              <input type="password" id="roomPasswordInput" data-i18n-placeholder="optional" placeholder="OPTIONAL"
+                class="cyber-input w-full" maxlength="20" />
             </div>
           </div>
-          
-          <button id="joinBtn" type="button" class="cyber-button w-full bg-acid text-black font-bold p-4 hover:bg-white hover:scale-[1.01] transition-all uppercase flex justify-between items-center group-hover:shadow-[0_0_20px_rgba(204,255,0,0.4)]">
+
+          <button id="joinBtn" type="button"
+            class="cyber-button w-full bg-acid text-black font-bold p-4 hover:bg-white hover:scale-[1.01] transition-all uppercase flex justify-between items-center group-hover:shadow-[0_0_20px_rgba(204,255,0,0.4)]">
             <span data-i18n="initializeLink">Initialize Link</span>
             <i class="ri-arrow-right-line"></i>
           </button>
@@ -101,29 +112,33 @@
       </div>
     </div>
   </div>
-  
+
   <!-- 主聊天界面 (初始隐藏) -->
-  <main id="main-interface" class="flex-1 flex h-full opacity-0 scale-95 transition-all duration-1000 pointer-events-none blur-sm">
-    
+  <main id="main-interface"
+    class="flex-1 flex h-full opacity-0 scale-95 transition-all duration-1000 pointer-events-none blur-sm">
+
     <!-- 左侧边栏: HUD 信息 -->
-    <aside id="sidebar" class="w-20 md:w-64 border-r border-white/10 flex flex-col bg-black/50 backdrop-blur-md hidden md:flex">
+    <aside id="sidebar"
+      class="w-20 md:w-64 border-r border-white/10 flex flex-col bg-black/50 backdrop-blur-md hidden md:flex">
       <div class="p-6 border-b border-white/10 relative">
-        <button id="sidebar-close-btn" class="absolute top-4 right-4 text-acid hover:text-white transition-colors"><i class="ri-close-line text-xl"></i></button>
+        <button id="sidebar-close-btn" class="absolute top-4 right-4 text-acid hover:text-white transition-colors"><i
+            class="ri-close-line text-xl"></i></button>
         <div class="w-3 h-3 bg-acid rounded-full mb-2"></div>
         <h2 class="font-mono text-xs text-gray-500" data-i18n="connectedTo">CONNECTED TO:</h2>
         <div id="current-room-name" class="font-bold text-xl tracking-tight">LOBBY</div>
         <div id="roomIdLabel" class="font-mono text-xs text-gray-600 mt-1"></div>
       </div>
-      
+
       <!-- 房间信息卡片 -->
       <div id="roomInfo" class="p-4 border-b border-white/10 cursor-pointer hover:bg-white/5 transition-colors">
         <div class="font-mono text-xs text-gray-500 mb-2" data-i18n="roomInfo">ROOM INFO</div>
         <div id="roomName" class="text-sm font-bold mb-1"></div>
         <div id="roomDescription" class="text-xs text-gray-500 mb-2 line-clamp-2"></div>
         <div id="roomPasswordStatus" class="text-xs font-mono"></div>
-          <button id="editRoomBtn" class="cyber-button-small mt-2 w-full" style="display: none;" data-i18n="editRoom">EDIT ROOM</button>
+        <button id="editRoomBtn" class="cyber-button-small mt-2 w-full" style="display: none;" data-i18n="editRoom">EDIT
+          ROOM</button>
       </div>
-      
+
       <!-- 在线用户列表 -->
       <div class="flex-1 overflow-y-auto p-4 cyber-scroll">
         <div class="font-mono text-xs text-gray-600 mb-4" data-i18n="activeNodes">ACTIVE NODES</div>
@@ -131,11 +146,12 @@
           <!-- 用户列表项将在这里生成 -->
         </ul>
       </div>
-      
+
       <!-- 底部操作区 -->
       <div class="p-4 border-t border-white/10 space-y-2">
         <button id="shareBtn" class="cyber-button-small w-full" data-i18n="shareRoom">SHARE ROOM</button>
-        <button id="leaveBtn" class="cyber-button-small w-full bg-red-900/30 border-red-500/50 hover:bg-red-900/50" style="display: none;" data-i18n="leaveRoom">LEAVE ROOM</button>
+        <button id="leaveBtn" class="cyber-button-small w-full bg-red-900/30 border-red-500/50 hover:bg-red-900/50"
+          style="display: none;" data-i18n="leaveRoom">LEAVE ROOM</button>
         <button id="searchToggleBtn" class="cyber-button-small w-full" data-i18n="search">SEARCH</button>
         <button id="projectInfoBtn" class="cyber-button-small w-full" data-i18n="projectInfo">PROJECT INFO</button>
         <div class="text-xs font-mono text-gray-600 mt-2">
@@ -146,12 +162,13 @@
         </div>
       </div>
     </aside>
-    
+
     <!-- 移动端侧边栏遮罩 -->
     <div id="sidebar-overlay" class="fixed inset-0 bg-black/80 z-40 md:hidden" style="display: none;"></div>
-    
+
     <!-- 移动端侧边栏 -->
-    <aside id="mobile-sidebar" class="fixed left-0 top-0 h-full w-80 bg-surface border-r border-white/10 z-50 transform -translate-x-full transition-transform md:hidden overflow-y-auto">
+    <aside id="mobile-sidebar"
+      class="fixed left-0 top-0 h-full w-80 bg-surface border-r border-white/10 z-50 transform -translate-x-full transition-transform md:hidden overflow-y-auto">
       <div class="p-4 border-b border-white/10 flex justify-between items-center">
         <h2 class="font-mono text-sm">MENU</h2>
         <button id="mobile-sidebar-close" class="text-acid"><i class="ri-close-line text-2xl"></i></button>
@@ -162,7 +179,8 @@
           <div id="mobile-roomName" class="text-sm font-bold mb-1"></div>
           <div id="mobile-roomDescription" class="text-xs text-gray-500 mb-2"></div>
           <div id="mobile-roomPasswordStatus" class="text-xs font-mono mb-2"></div>
-          <button id="mobile-editRoomBtn" class="cyber-button-small w-full" style="display: none;" data-i18n="editRoom">EDIT ROOM</button>
+          <button id="mobile-editRoomBtn" class="cyber-button-small w-full" style="display: none;"
+            data-i18n="editRoom">EDIT ROOM</button>
         </div>
         <div class="mb-4">
           <div class="font-mono text-xs text-gray-500 mb-2" data-i18n="activeNodes">ACTIVE NODES</div>
@@ -170,68 +188,75 @@
         </div>
         <div class="space-y-2">
           <button id="mobile-shareBtn" class="cyber-button-small w-full" data-i18n="shareRoom">SHARE ROOM</button>
-          <button id="mobile-leaveBtn" class="cyber-button-small w-full bg-red-900/30 border-red-500/50" style="display: none;" data-i18n="leaveRoom">LEAVE ROOM</button>
+          <button id="mobile-leaveBtn" class="cyber-button-small w-full bg-red-900/30 border-red-500/50"
+            style="display: none;" data-i18n="leaveRoom">LEAVE ROOM</button>
           <button id="mobile-searchToggleBtn" class="cyber-button-small w-full" data-i18n="search">SEARCH</button>
-          <button id="mobile-projectInfoBtn" class="cyber-button-small w-full" data-i18n="projectInfo">PROJECT INFO</button>
+          <button id="mobile-projectInfoBtn" class="cyber-button-small w-full" data-i18n="projectInfo">PROJECT
+            INFO</button>
         </div>
         <div class="text-xs font-mono text-gray-600 mt-4 pt-4 border-t border-white/5 text-center px-4">
           由 Do It Dui Team 开发
         </div>
       </div>
     </aside>
-    
+
     <!-- 中间: 聊天流 -->
     <section class="flex-1 flex flex-col relative overflow-hidden">
-      
+
       <!-- 顶部状态栏 -->
-      <header class="h-16 border-b border-white/10 flex items-center justify-between px-6 bg-black/20 backdrop-blur flex-shrink-0">
+      <header
+        class="h-16 border-b border-white/10 flex items-center justify-between px-6 bg-black/20 backdrop-blur flex-shrink-0">
         <div class="flex items-center gap-4">
-          <button id="mobile-menu-btn" class="md:hidden text-acid hover:text-white transition-colors"><i class="ri-menu-line text-xl"></i></button>
+          <button id="mobile-menu-btn" class="md:hidden text-acid hover:text-white transition-colors"><i
+              class="ri-menu-line text-xl"></i></button>
           <span class="font-mono text-xs text-acid" id="encryption-status">Encrypted // TLS 1.3</span>
         </div>
         <div class="flex gap-4">
-          <button id="language-toggle" class="hover:text-acid transition-colors font-mono text-xs" title="Language / 语言">
+          <button id="language-toggle" class="hover:text-acid transition-colors font-mono text-xs"
+            title="Language / 语言">
             <span id="language-display">EN</span>
           </button>
-          <button id="theme-toggle" class="hover:text-acid transition-colors" data-i18n-title="toggleTheme"><i class="ri-contrast-drop-line text-xl"></i></button>
-          <button id="settings-toggle" class="hover:text-acid transition-colors" data-i18n-title="settings"><i class="ri-settings-3-line text-xl"></i></button>
+          <button id="theme-toggle" class="hover:text-acid transition-colors" data-i18n-title="toggleTheme"><i
+              class="ri-contrast-drop-line text-xl"></i></button>
+          <button id="settings-toggle" class="hover:text-acid transition-colors" data-i18n-title="settings"><i
+              class="ri-settings-3-line text-xl"></i></button>
         </div>
       </header>
-      
+
       <!-- 消息容器 -->
       <div id="messages" class="flex-1 overflow-y-auto p-6 space-y-6 cyber-scroll relative">
         <!-- 欢迎信息 -->
-        <div id="initial-guidance" class="flex flex-col items-center justify-center opacity-30 py-10 select-none pointer-events-none">
+        <div id="initial-guidance"
+          class="flex flex-col items-center justify-center opacity-30 py-10 select-none pointer-events-none">
           <i class="ri-code-s-slash-line text-6xl mb-4"></i>
           <span class="font-mono text-sm" data-i18n="systemReady">SYSTEM READY. AWAITING INPUT.</span>
         </div>
       </div>
-      
+
       <!-- 回复提示栏 (默认隐藏) -->
-      <div id="reply-bar" class="hidden bg-surface border-t border-white/10 p-2 px-6 flex justify-between items-center text-xs font-mono text-acid flex-shrink-0">
+      <div id="reply-bar"
+        class="hidden bg-surface border-t border-white/10 p-2 px-6 flex justify-between items-center text-xs font-mono text-acid flex-shrink-0">
         <span id="replyPreviewText" data-i18n="replyingTo">REPLYING TO TARGET...</span>
         <button id="cancelReplyBtn" class="hover:text-white transition-colors" data-i18n="cancel">CANCEL [ESC]</button>
       </div>
-      
+
       <!-- 频率限制提示 -->
       <div id="rateLimitToast" class="cyber-toast hidden">MESSAGE RATE LIMIT EXCEEDED</div>
-      
+
       <!-- 底部输入区 -->
       <div class="p-4 md:p-6 pb-8 bg-gradient-to-t from-void to-transparent flex-shrink-0">
         <form id="messageForm" class="relative flex gap-4 max-w-5xl mx-auto cyber-input-group">
           <div class="flex-1 relative group">
             <!-- 输入框装饰 -->
-            <div class="absolute top-0 left-0 w-2 h-2 border-t border-l border-acid opacity-50 group-hover:opacity-100 transition-opacity"></div>
-            <div class="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-acid opacity-50 group-hover:opacity-100 transition-opacity"></div>
-            
-            <input 
-              type="text" 
-              id="messageInput" 
-              autocomplete="off"
-              placeholder="EXECUTE COMMAND..."
-              data-i18n-placeholder="executeCommand" 
-              class="cyber-input w-full"
-            />
+            <div
+              class="absolute top-0 left-0 w-2 h-2 border-t border-l border-acid opacity-50 group-hover:opacity-100 transition-opacity">
+            </div>
+            <div
+              class="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-acid opacity-50 group-hover:opacity-100 transition-opacity">
+            </div>
+
+            <input type="text" id="messageInput" autocomplete="off" placeholder="EXECUTE COMMAND..."
+              data-i18n-placeholder="executeCommand" class="cyber-input w-full" />
           </div>
           <button type="submit" id="sendButton" class="cyber-send-button px-8 font-mono font-bold">
             <span data-i18n="send">SEND</span> <i class="ri-send-plane-fill ml-2"></i>
@@ -240,7 +265,7 @@
       </div>
     </section>
   </main>
-  
+
   <!-- 分享房间模态框 -->
   <div id="shareModal" class="cyber-modal hidden">
     <div class="cyber-modal-content">
@@ -253,7 +278,7 @@
       </div>
     </div>
   </div>
-  
+
   <!-- 编辑房间模态框 -->
   <div id="editRoomModal" class="cyber-modal hidden">
     <div class="cyber-modal-content">
@@ -263,15 +288,18 @@
         <div class="cyber-form-warning" data-i18n="saveWarning">确认保存后，房间名称、描述与密码将不可改动。</div>
         <div class="cyber-form-group">
           <label data-i18n="roomName">房间名称</label>
-          <input type="text" id="editRoomName" data-i18n-placeholder="roomNamePlaceholder" placeholder="房间名称（可选）" maxlength="50" class="cyber-input" />
+          <input type="text" id="editRoomName" data-i18n-placeholder="roomNamePlaceholder" placeholder="房间名称（可选）"
+            maxlength="50" class="cyber-input" />
         </div>
         <div class="cyber-form-group">
           <label data-i18n="roomDescription">房间描述</label>
-          <textarea id="editRoomDescription" data-i18n-placeholder="roomDescriptionPlaceholder" placeholder="房间描述（可选）" maxlength="200" rows="3" class="cyber-input"></textarea>
+          <textarea id="editRoomDescription" data-i18n-placeholder="roomDescriptionPlaceholder" placeholder="房间描述（可选）"
+            maxlength="200" rows="3" class="cyber-input"></textarea>
         </div>
         <div class="cyber-form-group">
           <label data-i18n="roomPasswordLabel">房间密码</label>
-          <input type="password" id="editRoomPassword" data-i18n-placeholder="roomPasswordPlaceholder" placeholder="留空表示开放房间" maxlength="20" class="cyber-input" />
+          <input type="password" id="editRoomPassword" data-i18n-placeholder="roomPasswordPlaceholder"
+            placeholder="留空表示开放房间" maxlength="20" class="cyber-input" />
           <small data-i18n="passwordNote">设置密码后，只有知道密码的用户才能加入。默认房间（ID为"1"）不能设置密码。</small>
         </div>
         <div class="cyber-form-group" id="editPasswordConfirmGroup" style="display: none;">
@@ -288,33 +316,39 @@
       </form>
     </div>
   </div>
-  
+
   <!-- 密码输入模态框 -->
   <div id="passwordModal" class="cyber-modal hidden">
     <div class="w-full max-w-lg relative">
       <!-- 装饰边框 -->
       <div class="absolute -inset-1 bg-gradient-to-r from-acid to-electric opacity-30 blur"></div>
-      
+
       <div class="relative bg-surface border border-white/10 p-10 overflow-hidden group">
         <!-- 扫描线动画 -->
-        <div class="absolute top-0 left-0 w-full h-1 bg-acid/50 shadow-[0_0_15px_rgba(204,255,0,0.5)] animate-scan"></div>
-        
-        <button type="button" class="absolute top-4 right-4 text-acid hover:text-white transition-colors z-10" id="cancelPasswordBtn">
+        <div class="absolute top-0 left-0 w-full h-1 bg-acid/50 shadow-[0_0_15px_rgba(204,255,0,0.5)] animate-scan">
+        </div>
+
+        <button type="button" class="absolute top-4 right-4 text-acid hover:text-white transition-colors z-10"
+          id="cancelPasswordBtn">
           <i class="ri-close-line text-xl"></i>
         </button>
-        
+
         <h1 class="text-6xl font-bold mb-2 tracking-tighter">LINK_SPACE</h1>
-        <div class="text-acid font-mono text-sm mb-2 tracking-widest" data-i18n="passwordRequired">PASSWORD REQUIRED</div>
+        <div class="text-acid font-mono text-sm mb-2 tracking-widest" data-i18n="passwordRequired">PASSWORD REQUIRED
+        </div>
         <p class="text-gray-400 mb-8 text-sm" data-i18n="passwordRequiredDesc">该房间需要密码才能加入</p>
-        
+
         <form id="passwordForm" class="space-y-6 font-mono">
-          <div id="passwordErrorMsg" class="hidden text-acid text-xs font-mono mb-2 bg-acid/10 border border-acid/30 px-3 py-2"></div>
+          <div id="passwordErrorMsg"
+            class="hidden text-acid text-xs font-mono mb-2 bg-acid/10 border border-acid/30 px-3 py-2"></div>
           <div>
             <label class="block text-xs text-gray-500 mb-1" data-i18n="encryptionKey">ENCRYPTION KEY</label>
-            <input type="password" id="passwordInput" data-i18n-placeholder="enterPassword" placeholder="请输入房间密码" maxlength="20" class="cyber-input w-full" autofocus />
+            <input type="password" id="passwordInput" data-i18n-placeholder="enterPassword" placeholder="请输入房间密码"
+              maxlength="20" class="cyber-input w-full" autofocus />
           </div>
-          
-          <button type="submit" class="cyber-button w-full bg-acid text-black font-bold p-4 hover:bg-white hover:scale-[1.01] transition-all uppercase flex justify-between items-center group-hover:shadow-[0_0_20px_rgba(204,255,0,0.4)]">
+
+          <button type="submit"
+            class="cyber-button w-full bg-acid text-black font-bold p-4 hover:bg-white hover:scale-[1.01] transition-all uppercase flex justify-between items-center group-hover:shadow-[0_0_20px_rgba(204,255,0,0.4)]">
             <span data-i18n="confirm">CONFIRM</span>
             <i class="ri-arrow-right-line"></i>
           </button>
@@ -322,7 +356,7 @@
       </div>
     </div>
   </div>
-  
+
   <!-- 搜索面板 -->
   <div id="searchPanel" class="cyber-search-panel hidden">
     <div class="cyber-search-header">
@@ -331,48 +365,56 @@
     </div>
     <div class="cyber-search-body">
       <div class="cyber-search-input-group">
-        <input type="text" id="searchInput" data-i18n-placeholder="enterKeyword" placeholder="ENTER KEYWORD..." maxlength="100" class="cyber-input" />
+        <input type="text" id="searchInput" data-i18n-placeholder="enterKeyword" placeholder="ENTER KEYWORD..."
+          maxlength="100" class="cyber-input" />
         <button id="searchBtn" class="cyber-button-small"><i class="ri-search-line"></i></button>
       </div>
       <div id="searchResults" class="cyber-search-results" style="display: none;"></div>
     </div>
   </div>
-  
+
   <!-- 预填加入模态框 -->
   <div id="prefillJoinModal" class="cyber-modal hidden">
     <div class="w-full max-w-lg relative">
       <!-- 装饰边框 -->
       <div class="absolute -inset-1 bg-gradient-to-r from-acid to-electric opacity-30 blur"></div>
-      
+
       <div class="relative bg-surface border border-white/10 p-10 overflow-hidden group">
         <!-- 扫描线动画 -->
-        <div class="absolute top-0 left-0 w-full h-1 bg-acid/50 shadow-[0_0_15px_rgba(204,255,0,0.5)] animate-scan"></div>
-        
-        <button type="button" class="absolute top-4 right-4 text-acid hover:text-white transition-colors z-10" id="prefillCancelBtn">
+        <div class="absolute top-0 left-0 w-full h-1 bg-acid/50 shadow-[0_0_15px_rgba(204,255,0,0.5)] animate-scan">
+        </div>
+
+        <button type="button" class="absolute top-4 right-4 text-acid hover:text-white transition-colors z-10"
+          id="prefillCancelBtn">
           <i class="ri-close-line text-xl"></i>
         </button>
-        
+
         <h1 class="text-6xl font-bold mb-2 tracking-tighter">LINK_SPACE</h1>
-        <div class="text-acid font-mono text-sm mb-8 tracking-widest" data-i18n="secureConnectionProtocol">SECURE CONNECTION PROTOCOL v1.0</div>
-        
+        <div class="text-acid font-mono text-sm mb-8 tracking-widest" data-i18n="secureConnectionProtocol">SECURE
+          CONNECTION PROTOCOL v1.0</div>
+
         <div class="space-y-6 font-mono">
           <div>
             <label class="block text-xs text-gray-500 mb-1" data-i18n="identity">IDENTITY</label>
-            <input type="text" id="prefillNickname" data-i18n-placeholder="enterNickname" placeholder="请输入昵称" maxlength="24" class="cyber-input w-full" />
+            <input type="text" id="prefillNickname" data-i18n-placeholder="enterNickname" placeholder="请输入昵称"
+              maxlength="24" class="cyber-input w-full" />
           </div>
-          
+
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-xs text-gray-500 mb-1" data-i18n="targetNode">TARGET_NODE (ROOM ID)</label>
-              <input type="text" id="prefillRoomId" data-i18n-placeholder="roomId" placeholder="房间ID" maxlength="40" class="cyber-input w-full" />
+              <input type="text" id="prefillRoomId" data-i18n-placeholder="roomId" placeholder="房间ID" maxlength="40"
+                class="cyber-input w-full" />
             </div>
             <div>
               <label class="block text-xs text-gray-500 mb-1" data-i18n="encryptionKey">ENCRYPTION KEY</label>
-              <input type="password" id="prefillPassword" data-i18n-placeholder="ifPassword" placeholder="如有密码请填写" maxlength="20" class="cyber-input w-full" />
+              <input type="password" id="prefillPassword" data-i18n-placeholder="ifPassword" placeholder="如有密码请填写"
+                maxlength="20" class="cyber-input w-full" />
             </div>
           </div>
-          
-          <button type="button" id="prefillConfirmBtn" class="cyber-button w-full bg-acid text-black font-bold p-4 hover:bg-white hover:scale-[1.01] transition-all uppercase flex justify-between items-center group-hover:shadow-[0_0_20px_rgba(204,255,0,0.4)]">
+
+          <button type="button" id="prefillConfirmBtn"
+            class="cyber-button w-full bg-acid text-black font-bold p-4 hover:bg-white hover:scale-[1.01] transition-all uppercase flex justify-between items-center group-hover:shadow-[0_0_20px_rgba(204,255,0,0.4)]">
             <span data-i18n="initializeLink">Initialize Link</span>
             <i class="ri-arrow-right-line"></i>
           </button>
@@ -380,7 +422,7 @@
       </div>
     </div>
   </div>
-  
+
   <!-- 项目信息模态框 -->
   <div id="projectInfoModal" class="cyber-modal hidden">
     <div class="cyber-modal-content">
@@ -389,7 +431,8 @@
       <div class="cyber-form">
         <div class="cyber-form-group">
           <p class="text-sm text-gray-300 mb-4" data-i18n="projectInfoDesc">访问我们的开源仓库以了解更多项目进展与文档：</p>
-          <a href="https://github.com/YouXiangyu/Link-Space-Chat?tab=readme-ov-file" target="_blank" rel="noopener" class="cyber-project-link" data-i18n="githubRepo">
+          <a href="https://github.com/YouXiangyu/Link-Space-Chat?tab=readme-ov-file" target="_blank" rel="noopener"
+            class="cyber-project-link" data-i18n="githubRepo">
             GitHub 仓库：Link-Space-Chat
           </a>
         </div>
@@ -399,79 +442,79 @@
       </div>
     </div>
   </div>
-  
+
   <!-- 引入 socket.io 和 qrcode -->
   <script src="/socket.io/socket.io.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
-  
+
   <!-- 临时内联脚本，确保按钮能立即响应 -->
   <script>
     // 全局调试标志
     window.DEBUG = true;
-    
+
     // 确保按钮在模块加载前就能响应
     function setupJoinButton() {
       const joinBtn = document.getElementById('joinBtn');
       const nicknameInput = document.getElementById('nickname');
       const roomIdInput = document.getElementById('roomIdInput');
       const roomPasswordInput = document.getElementById('roomPasswordInput');
-      
-      console.log('[Setup] Looking for join button...', { 
-        joinBtn: !!joinBtn, 
-        nicknameInput: !!nicknameInput, 
-        roomIdInput: !!roomIdInput 
+
+      console.log('[Setup] Looking for join button...', {
+        joinBtn: !!joinBtn,
+        nicknameInput: !!nicknameInput,
+        roomIdInput: !!roomIdInput
       });
-      
+
       if (joinBtn) {
         // 检查是否已经绑定过
         if (joinBtn.dataset.listenerAttached === 'true') {
           console.log('[Setup] Listener already attached, skipping');
           return;
         }
-        
-        joinBtn.addEventListener('click', function(e) {
+
+        joinBtn.addEventListener('click', function (e) {
           e.preventDefault();
           e.stopPropagation();
           console.log('[Click] Join button clicked!');
-          
+
           const nickname = nicknameInput ? nicknameInput.value.trim() : '';
           console.log('[Click] Nickname:', nickname);
-          
+
           if (!nickname) {
             alert('请输入一个昵称');
             return;
           }
-          
+
           let roomId = (roomIdInput ? roomIdInput.value.trim() : '') || '';
           if (!roomId) {
             roomId = '1';
           }
           console.log('[Click] Room ID:', roomId);
-          
-          const password = (roomPasswordInput && roomPasswordInput.style.display !== 'none') 
-            ? (roomPasswordInput.value.trim() || null) 
+
+          const password = (roomPasswordInput && roomPasswordInput.style.display !== 'none')
+            ? (roomPasswordInput.value.trim() || null)
             : null;
-          
+
           console.log('[Click] Attempting to join:', { roomId, nickname, hasPassword: !!password });
-          
+
           // 检查socket是否可用
           if (typeof io === 'undefined') {
             console.error('[Click] Socket.io not loaded!');
             alert('Socket.io未加载，请刷新页面重试');
             return;
           }
-          
+
           // 触发自定义事件，让app.js处理
           const joinEvent = new CustomEvent('joinRoomRequest', {
             detail: { roomId, nickname, password },
             bubbles: true,
             cancelable: true
           });
-          
+
           console.log('[Click] Dispatching joinRoomRequest event');
           const dispatched = window.dispatchEvent(joinEvent);
           console.log('[Click] Event dispatched:', dispatched);
-          
+
           // 如果事件没有被处理，等待app.js加载
           setTimeout(() => {
             if (!window.joinRoomHandled) {
@@ -491,7 +534,7 @@
             window.joinRoomHandled = false;
           }, 1000);
         });
-        
+
         joinBtn.dataset.listenerAttached = 'true';
         console.log('[Setup] Join button event listener attached successfully');
       } else {
@@ -500,31 +543,31 @@
         setTimeout(setupJoinButton, 200);
       }
     }
-    
+
     // 立即尝试设置
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', setupJoinButton);
     } else {
       setupJoinButton();
     }
-    
+
     // 也监听window.load事件作为备用
-    window.addEventListener('load', function() {
+    window.addEventListener('load', function () {
       console.log('[Load] Window loaded, checking join button again...');
       setTimeout(setupJoinButton, 100);
     });
   </script>
-  
+
   <!-- 引入适配器脚本 -->
   <script type="module" src="/js/i18n.js"></script>
   <script type="module" src="/uiAdapter.js"></script>
   <script type="module" src="/cyberTheme.js"></script>
   <script type="module" src="/app.js"></script>
-  
+
   <!-- 语言切换逻辑 -->
   <script type="module">
     import { setLanguage, getLanguage, updatePageText } from '/js/i18n.js';
-    
+
     // 初始化语言显示
     function updateLanguageDisplay() {
       const lang = getLanguage();
@@ -533,7 +576,7 @@
         display.textContent = lang === 'zh' ? '中文' : 'EN';
       }
     }
-    
+
     // 语言切换按钮事件
     const languageToggle = document.getElementById('language-toggle');
     if (languageToggle) {
@@ -544,7 +587,7 @@
         updateLanguageDisplay();
       });
     }
-    
+
     // 初始化时更新显示
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', () => {
@@ -555,4 +598,5 @@
     }
   </script>
 </body>
+
 </html>

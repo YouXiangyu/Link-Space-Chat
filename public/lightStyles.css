@@ -1,0 +1,446 @@
+/* Light Theme Styles - Clean & Minimalist */
+/* Designed to override Cyber Theme when body has .light-theme class */
+
+body.light-theme {
+    background-color: #f8f9fa !important;
+    color: #1a202c !important;
+    font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+}
+
+/* Override Tailwind Colors */
+body.light-theme .bg-void {
+    background-color: #f8f9fa !important;
+}
+
+body.light-theme .bg-surface {
+    background-color: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+body.light-theme .bg-black\/50 {
+    background-color: rgba(255, 255, 255, 0.8) !important;
+}
+
+body.light-theme .bg-black\/20 {
+    background-color: rgba(255, 255, 255, 0.8) !important;
+    border-bottom-color: #e2e8f0 !important;
+}
+
+/* Fix bottom gradient shadow */
+body.light-theme .bg-gradient-to-t {
+    background-image: linear-gradient(to top, #ffffff, rgba(255, 255, 255, 0)) !important;
+}
+
+body.light-theme .border-white\/10 {
+    border-color: #e2e8f0 !important;
+}
+
+body.light-theme .border-white\/5 {
+    border-color: #edf2f7 !important;
+}
+
+body.light-theme .text-white {
+    color: #1a202c !important;
+}
+
+body.light-theme .text-gray-500 {
+    color: #718096 !important;
+}
+
+body.light-theme .text-gray-400 {
+    color: #a0aec0 !important;
+}
+
+body.light-theme .text-gray-300 {
+    color: #4a5568 !important;
+}
+
+body.light-theme .text-acid {
+    color: #3182ce !important;
+    /* Blue instead of Acid Green */
+}
+
+body.light-theme .bg-acid {
+    background-color: #3182ce !important;
+    color: #ffffff !important;
+}
+
+body.light-theme .hover\:text-white:hover {
+    color: #2d3748 !important;
+}
+
+body.light-theme .hover\:bg-white:hover {
+    background-color: #ebf8ff !important;
+}
+
+/* Hide Cyber Elements */
+body.light-theme .cyber-cursor {
+    display: none !important;
+}
+
+body.light-theme .noise-layer {
+    display: none !important;
+}
+
+body.light-theme .animate-scan {
+    display: none !important;
+}
+
+/* Toast Notification */
+body.light-theme .cyber-toast {
+    background: #2d3748 !important;
+    /* Dark Grey/Blue */
+    border: 1px solid #4a5568 !important;
+    color: #ffffff !important;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+    border-radius: 8px;
+    font-family: 'Space Grotesk', sans-serif !important;
+}
+
+/* Inputs */
+body.light-theme .cyber-input {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #1a202c !important;
+    border-radius: 8px;
+    font-family: 'Space Grotesk', sans-serif !important;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+body.light-theme .cyber-input:focus {
+    border-color: #3182ce !important;
+    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.2) !important;
+    background: #ffffff !important;
+}
+
+body.light-theme .cyber-input::placeholder {
+    color: #a0aec0 !important;
+}
+
+/* Buttons */
+body.light-theme .cyber-button {
+    background: #3182ce !important;
+    color: #ffffff !important;
+    border: 1px solid #3182ce !important;
+    border-radius: 8px;
+    font-family: 'Space Grotesk', sans-serif !important;
+    box-shadow: 0 4px 6px -1px rgba(49, 130, 206, 0.3);
+    text-transform: none !important;
+    font-weight: 600;
+}
+
+body.light-theme .cyber-button:hover {
+    background: #2c5282 !important;
+    border-color: #2c5282 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 8px -1px rgba(49, 130, 206, 0.4) !important;
+}
+
+/* Fix group-hover glow on buttons (Initialize Link, etc) */
+body.light-theme .group:hover .cyber-button {
+    box-shadow: 0 4px 6px -1px rgba(49, 130, 206, 0.3) !important;
+}
+
+body.light-theme .group:hover .cyber-button:hover {
+    box-shadow: 0 6px 8px -1px rgba(49, 130, 206, 0.4) !important;
+}
+
+body.light-theme .cyber-button-small {
+    background: #edf2f7 !important;
+    color: #4a5568 !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 6px;
+    font-family: 'Space Grotesk', sans-serif !important;
+    text-transform: none !important;
+    font-weight: 500;
+}
+
+body.light-theme .cyber-button-small:hover {
+    background: #e2e8f0 !important;
+    color: #2d3748 !important;
+    border-color: #cbd5e0 !important;
+}
+
+body.light-theme .cyber-send-button {
+    background: #3182ce !important;
+    color: #ffffff !important;
+    border: 1px solid #3182ce !important;
+    border-radius: 0 8px 8px 0;
+}
+
+body.light-theme .cyber-send-button:hover {
+    background: #2c5282 !important;
+}
+
+body.light-theme .cyber-send-button.has-text {
+    background: #3182ce !important;
+    box-shadow: 0 4px 12px rgba(49, 130, 206, 0.3) !important;
+}
+
+/* Messages */
+body.light-theme .cyber-message-body {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #2d3748 !important;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    font-family: 'Space Grotesk', sans-serif !important;
+}
+
+body.light-theme .cyber-message-body::before,
+body.light-theme .cyber-message-body::after {
+    display: none !important;
+}
+
+body.light-theme .cyber-message.my-message .cyber-message-body {
+    background: #ebf8ff !important;
+    /* Light Blue */
+    border-color: #bee3f8 !important;
+    color: #2c5282 !important;
+}
+
+body.light-theme .cyber-message-nickname {
+    color: #3182ce !important;
+}
+
+body.light-theme .cyber-message.my-message .cyber-message-nickname {
+    color: #2c5282 !important;
+}
+
+body.light-theme .cyber-message-time {
+    color: #a0aec0 !important;
+}
+
+body.light-theme .cyber-message-text {
+    color: inherit !important;
+    font-family: 'Space Grotesk', sans-serif !important;
+}
+
+body.light-theme .cyber-message-avatar {
+    border-radius: 50%;
+    background: #edf2f7 !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #4a5568 !important;
+}
+
+body.light-theme .cyber-message-avatar::after {
+    border-radius: 50%;
+    border: 2px solid #fff;
+    background: #48bb78 !important;
+    /* Green status dot */
+}
+
+/* Reply Author Color Override */
+body.light-theme .cyber-message-reply-author {
+    color: #3182ce !important;
+    font-weight: 600;
+}
+
+/* Highlighted Message Override */
+body.light-theme .cyber-message.highlighted .cyber-message-body {
+    border-color: #3182ce !important;
+    background-color: #ebf8ff !important;
+    box-shadow: 0 0 0 2px rgba(49, 130, 206, 0.2) !important;
+}
+
+/* Sidebar & Lists */
+body.light-theme #sidebar {
+    background-color: #ffffff !important;
+    border-right: 1px solid #e2e8f0 !important;
+}
+
+body.light-theme .cyber-user-item {
+    background: transparent !important;
+    border: none !important;
+    border-radius: 6px;
+    color: #4a5568 !important;
+}
+
+body.light-theme .cyber-user-item:hover {
+    background: #f7fafc !important;
+}
+
+body.light-theme .cyber-user-avatar {
+    background: #edf2f7 !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #4a5568 !important;
+    border-radius: 50%;
+}
+
+/* Modals */
+body.light-theme .cyber-modal {
+    background: rgba(0, 0, 0, 0.5) !important;
+    backdrop-filter: blur(4px);
+}
+
+body.light-theme .cyber-modal-content {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 16px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+    color: #2d3748 !important;
+}
+
+body.light-theme .cyber-modal-title {
+    color: #2d3748 !important;
+    font-family: 'Space Grotesk', sans-serif !important;
+}
+
+body.light-theme .cyber-modal-close {
+    color: #a0aec0 !important;
+}
+
+body.light-theme .cyber-modal-close:hover {
+    color: #2d3748 !important;
+}
+
+/* Search Panel */
+body.light-theme .cyber-search-panel {
+    background: #ffffff !important;
+    border-left: 1px solid #e2e8f0 !important;
+    box-shadow: -4px 0 15px rgba(0, 0, 0, 0.05) !important;
+}
+
+body.light-theme .cyber-search-header {
+    border-bottom: 1px solid #e2e8f0 !important;
+    color: #2d3748 !important;
+}
+
+body.light-theme .cyber-search-result-item {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 8px;
+    color: #4a5568 !important;
+}
+
+body.light-theme .cyber-search-result-item:hover {
+    background: #f7fafc !important;
+    border-color: #3182ce !important;
+}
+
+body.light-theme .cyber-search-result-author {
+    color: #3182ce !important;
+}
+
+/* Login Overlay */
+body.light-theme #login-overlay {
+    background: #f8f9fa !important;
+}
+
+body.light-theme #login-overlay .bg-surface {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+    border-radius: 24px;
+}
+
+body.light-theme #login-overlay h1 {
+    color: #1a202c !important;
+    letter-spacing: -0.05em;
+}
+
+body.light-theme #login-overlay .text-acid {
+    color: #3182ce !important;
+}
+
+body.light-theme #login-overlay .absolute.-inset-1 {
+    display: none !important;
+    /* Hide glowing border */
+}
+
+/* Edit Room Modal Highlighting */
+body.light-theme .cyber-form-warning {
+    background: #ebf8ff !important;
+    border: 1px solid #bee3f8 !important;
+    color: #2c5282 !important;
+    border-radius: 8px;
+    font-family: 'Space Grotesk', sans-serif !important;
+}
+
+/* Share Room Modal Highlighting */
+body.light-theme .cyber-qr-code {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 12px;
+}
+
+/* Prefill Join Modal Highlighting */
+body.light-theme #prefillJoinModal .bg-surface {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+    border-radius: 24px;
+}
+
+body.light-theme #prefillJoinModal .absolute.-inset-1 {
+    display: none !important;
+}
+
+body.light-theme #prefillJoinModal h1 {
+    color: #1a202c !important;
+}
+
+/* Password Modal Highlighting */
+body.light-theme #passwordModal .bg-surface {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+    border-radius: 24px;
+}
+
+body.light-theme #passwordModal .absolute.-inset-1 {
+    display: none !important;
+}
+
+body.light-theme #passwordModal h1 {
+    color: #1a202c !important;
+}
+
+body.light-theme #passwordErrorMsg {
+    background: #fff5f5 !important;
+    border: 1px solid #fed7d7 !important;
+    color: #c53030 !important;
+    border-radius: 6px;
+}
+
+/* Project Info Link */
+body.light-theme .cyber-project-link {
+    color: #2b6cb0 !important;
+    /* Stronger Blue */
+    font-family: 'Space Grotesk', sans-serif !important;
+    font-weight: 700 !important;
+    text-decoration: underline !important;
+    font-size: 16px !important;
+}
+
+body.light-theme .cyber-project-link:hover {
+    color: #2c5282 !important;
+    text-decoration: none !important;
+}
+
+/* Scrollbar */
+body.light-theme ::-webkit-scrollbar-track {
+    background: #f1f1f1 !important;
+}
+
+body.light-theme ::-webkit-scrollbar-thumb {
+    background: #cbd5e0 !important;
+    border-radius: 4px;
+}
+
+body.light-theme ::-webkit-scrollbar-thumb:hover {
+    background: #a0aec0 !important;
+}
+
+/* Icons */
+body.light-theme .ri-contrast-drop-line:before {
+    content: "\f1c3";
+    /* Sun icon or similar if available, but contrast is fine */
+}
+
+/* Input Group Decoration */
+body.light-theme .cyber-input-group .absolute {
+    display: none !important;
+    /* Hide corner decorations */
+}
