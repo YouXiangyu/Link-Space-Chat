@@ -242,6 +242,9 @@
 
       <!-- 频率限制提示 -->
       <div id="rateLimitToast" class="cyber-toast hidden">MESSAGE RATE LIMIT EXCEEDED</div>
+      
+      <!-- 主题切换提示 -->
+      <div id="themeToast" class="cyber-toast hidden"></div>
 
       <!-- 底部输入区 -->
       <div class="p-4 md:p-6 pb-8 bg-gradient-to-t from-void to-transparent flex-shrink-0">
@@ -447,122 +450,11 @@
   <script src="/socket.io/socket.io.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 
-  <!-- 临时内联脚本，确保按钮能立即响应 -->
-  <script>
-    // 全局调试标志
-    window.DEBUG = true;
-
-    // 确保按钮在模块加载前就能响应
-    function setupJoinButton() {
-      const joinBtn = document.getElementById('joinBtn');
-      const nicknameInput = document.getElementById('nickname');
-      const roomIdInput = document.getElementById('roomIdInput');
-      const roomPasswordInput = document.getElementById('roomPasswordInput');
-
-      console.log('[Setup] Looking for join button...', {
-        joinBtn: !!joinBtn,
-        nicknameInput: !!nicknameInput,
-        roomIdInput: !!roomIdInput
-      });
-
-      if (joinBtn) {
-        // 检查是否已经绑定过
-        if (joinBtn.dataset.listenerAttached === 'true') {
-          console.log('[Setup] Listener already attached, skipping');
-          return;
-        }
-
-        joinBtn.addEventListener('click', function (e) {
-          e.preventDefault();
-          e.stopPropagation();
-          console.log('[Click] Join button clicked!');
-
-          const nickname = nicknameInput ? nicknameInput.value.trim() : '';
-          console.log('[Click] Nickname:', nickname);
-
-          if (!nickname) {
-            alert('请输入一个昵称');
-            return;
-          }
-
-          let roomId = (roomIdInput ? roomIdInput.value.trim() : '') || '';
-          if (!roomId) {
-            roomId = '1';
-          }
-          console.log('[Click] Room ID:', roomId);
-
-          const password = (roomPasswordInput && roomPasswordInput.style.display !== 'none')
-            ? (roomPasswordInput.value.trim() || null)
-            : null;
-
-          console.log('[Click] Attempting to join:', { roomId, nickname, hasPassword: !!password });
-
-          // 检查socket是否可用
-          if (typeof io === 'undefined') {
-            console.error('[Click] Socket.io not loaded!');
-            alert('Socket.io未加载，请刷新页面重试');
-            return;
-          }
-
-          // 触发自定义事件，让app.js处理
-          const joinEvent = new CustomEvent('joinRoomRequest', {
-            detail: { roomId, nickname, password },
-            bubbles: true,
-            cancelable: true
-          });
-
-          console.log('[Click] Dispatching joinRoomRequest event');
-          const dispatched = window.dispatchEvent(joinEvent);
-          console.log('[Click] Event dispatched:', dispatched);
-
-          // 如果事件没有被处理，等待app.js加载
-          setTimeout(() => {
-            if (!window.joinRoomHandled) {
-              console.warn('[Click] Event not handled after 1s, app.js may not be loaded yet');
-              console.warn('[Click] Retrying event dispatch...');
-              // 再次尝试触发事件
-              const retryEvent = new CustomEvent('joinRoomRequest', {
-                detail: { roomId, nickname, password },
-                bubbles: true,
-                cancelable: true
-              });
-              window.dispatchEvent(retryEvent);
-            } else {
-              console.log('[Click] Event was handled successfully');
-            }
-            // 重置标志，允许下次点击
-            window.joinRoomHandled = false;
-          }, 1000);
-        });
-
-        joinBtn.dataset.listenerAttached = 'true';
-        console.log('[Setup] Join button event listener attached successfully');
-      } else {
-        console.error('[Setup] Join button not found!');
-        // 延迟重试
-        setTimeout(setupJoinButton, 200);
-      }
-    }
-
-    // 立即尝试设置
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', setupJoinButton);
-    } else {
-      setupJoinButton();
-    }
-
-    // 也监听window.load事件作为备用
-    window.addEventListener('load', function () {
-      console.log('[Load] Window loaded, checking join button again...');
-      setTimeout(setupJoinButton, 100);
-    });
-  </script>
-
   <!-- 引入适配器脚本 -->
   <script type="module" src="/js/i18n.js"></script>
   <script type="module" src="/uiAdapter.js"></script>
   <script type="module" src="/cyberTheme.js"></script>
-  <script type="module" src="/app.js"></script>
+  <script type="module" src="/js/app.js"></script>
 
   <!-- 语言切换逻辑 -->
   <script type="module">

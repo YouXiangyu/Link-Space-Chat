@@ -431,13 +431,32 @@ export const cyberTheme = {
     const isLight = document.body.classList.toggle('light-theme');
     localStorage.setItem('app-theme', isLight ? 'light' : 'cyber');
 
-    // 提示用户
-    const toast = document.getElementById('rateLimitToast');
-    if (toast) {
-      toast.textContent = isLight ? 'SWITCHED TO LIGHT THEME' : 'SWITCHED TO CYBER THEME';
-      toast.classList.remove('hidden');
+    // 使用独立的主题提示元素
+    const themeToast = document.getElementById('themeToast');
+    if (themeToast) {
+      themeToast.textContent = isLight ? 'SWITCHED TO LIGHT THEME' : 'SWITCHED TO CYBER THEME';
+      themeToast.classList.remove('hidden');
+      
+      if (typeof gsap !== 'undefined') {
+        gsap.fromTo(themeToast, 
+          { x: 100, opacity: 0 },
+          { x: 0, opacity: 1, duration: 0.3 }
+        );
+      }
+      
       setTimeout(() => {
-        toast.classList.add('hidden');
+        if (typeof gsap !== 'undefined') {
+          gsap.to(themeToast, {
+            x: 100,
+            opacity: 0,
+            duration: 0.3,
+            onComplete: () => {
+              themeToast.classList.add('hidden');
+            }
+          });
+        } else {
+          themeToast.classList.add('hidden');
+        }
       }, 2000);
     }
   }

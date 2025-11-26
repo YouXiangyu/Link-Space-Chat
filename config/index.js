@@ -50,14 +50,6 @@ const messageConfig = {
 };
 
 /**
- * 清理配置
- */
-const cleanupConfig = {
-  // 房间和用户列表清理延迟（断开连接后3分钟删除）
-  delay: 3 * 60 * 1000, // 3分钟
-};
-
-/**
  * 监控配置
  */
 const monitorConfig = {
@@ -104,7 +96,6 @@ const socketConfig = {
 module.exports = {
   server: serverConfig,
   message: messageConfig,
-  cleanup: cleanupConfig,
   monitor: monitorConfig,
   log: logConfig,
   rateLimit: rateLimitConfig,

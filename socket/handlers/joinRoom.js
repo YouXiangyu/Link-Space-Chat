@@ -91,9 +91,6 @@ function joinRoomHandler(socket, socketState, { io, roomState, messageService, d
       socketState.joinedRoomId = roomId;
       socketState.nickname = name;
 
-      // 如果用户重新连接，取消之前的清理任务
-      roomState.cancelRemoval(socket.id);
-
       // 添加用户到房间
       roomState.addUser(roomId, socket.id, socketState.nickname);
 

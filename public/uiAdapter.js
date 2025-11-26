@@ -101,7 +101,7 @@ export function renderMessage(container, message, isMyMessage = false, messageMa
   
   // 添加点击/长按回复事件（仅已发送的消息）
   if (message.status !== 'sending' && message.id) {
-    attachReplyHandlers(messageEl, message);
+    attachReplyHandlers(messageEl, message, messageMap);
   }
 }
 
@@ -109,17 +109,30 @@ export function renderMessage(container, message, isMyMessage = false, messageMa
  * 为消息元素附加回复事件处理器
  * @param {HTMLElement} messageEl - 消息元素
  * @param {Object} message - 消息对象
+ * @param {Map} messageMap - 消息映射（用于查找父消息）
  */
-function attachReplyHandlers(messageEl, message) {
+function attachReplyHandlers(messageEl, message, messageMap) {
   let clickTimer = null;
+  
+  const triggerReply = () => {
+    // 使用事件总线触发回复
+    if (window.eventBus && typeof window.eventBus.emit === 'function') {
+      window.eventBus.emit('message:startReply', { 
+        id: message.id, 
+        nickname: message.nickname, 
+        text: message.text 
+      });
+    } else if (window.startReply && typeof window.startReply === 'function') {
+      // 兼容旧版本
+      window.startReply({ id: message.id, nickname: message.nickname, text: message.text });
+    }
+  };
   
   // PC端：单击触发回复
   messageEl.addEventListener('click', (e) => {
     if (window.innerWidth > 768) {
       e.stopPropagation();
-      if (window.startReply && typeof window.startReply === 'function') {
-        window.startReply({ id: message.id, nickname: message.nickname, text: message.text });
-      }
+      triggerReply();
     }
   });
   
@@ -127,9 +140,7 @@ function attachReplyHandlers(messageEl, message) {
   messageEl.addEventListener('touchstart', (e) => {
     clickTimer = setTimeout(() => {
       e.preventDefault();
-      if (window.startReply && typeof window.startReply === 'function') {
-        window.startReply({ id: message.id, nickname: message.nickname, text: message.text });
-      }
+      triggerReply();
     }, 500);
   });
   
