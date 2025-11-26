@@ -109,10 +109,12 @@ export class RoomController {
 
       console.log("Successfully joined room, entering interface...");
 
-      if (messages) {
+      // 清除历史消息修复
+
+      /*if (messages) {
         messages.innerHTML = "";
         this.helpers.hideInitialGuidance?.(messages);
-      }
+      }*/
 
       this.state.pendingJoin = null;
 

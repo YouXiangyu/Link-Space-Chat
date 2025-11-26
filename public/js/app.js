@@ -202,6 +202,7 @@ import { appState } from './core/appState.js';
   socketManager.registerCallbacks({
     onServerPing: () => {},
     onHistory: (list) => {
+      console.log("[onHistory] got list length:", Array.isArray(list) ? list.length : list, list);
       if (!elements.messages || appState.historyProcessing) return;
 
       appState.historyProcessing = true;
@@ -268,7 +269,7 @@ import { appState } from './core/appState.js';
       }
 
       // 房间刷新后，历史消息会通过 Socket 的 history 事件自动加载
-    }
+    },
   });
 
   // 设置加入按钮事件
@@ -286,6 +287,10 @@ import { appState } from './core/appState.js';
       e.preventDefault();
       e.stopPropagation();
 
+      if (appState.joined) {
+        roomController.leaveCurrentRoom();
+      }
+
       const nickname = elements.nicknameInput ? elements.nicknameInput.value.trim() : "";
       if (!nickname) {
         alert("请输入一个昵称");
@@ -300,22 +305,6 @@ import { appState } from './core/appState.js';
       const password = (elements.roomPasswordInput && elements.roomPasswordInput.style.display !== 'none')
         ? (elements.roomPasswordInput.value.trim() || null)
         : null;
-
-      const alreadyInSameRoom =
-        appState.joined &&
-        socketManager.isConnected() &&
-        socketManager.raw?.connected &&
-        appState.currentRoomId === roomId &&
-        appState.myNickname === nickname;
-
-      if (alreadyInSameRoom) {
-        console.log("[Join] 已经在当前房间，无需重复加入");
-        return;
-      }
-
-      if (appState.joined) {
-        roomController.leaveCurrentRoom();
-      }
 
       roomController.joinRoom(roomId, nickname, password);
     });

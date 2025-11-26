@@ -119,6 +119,14 @@ function joinRoomHandler(socket, socketState, { io, roomState, messageService, d
 
       // 加载房间的历史消息（最近20条）
       const history = await messageService.getRecentMessages(db, roomId, 20);
+      console.log(
+        "[join_room] history loaded",
+        JSON.stringify({
+          roomId,
+          nickname: name,
+          count: Array.isArray(history) ? history.length : -1,
+        })
+      );
       
       // 获取房间信息（名称、描述、密码等）
       const roomInfo = await db.getRoom(roomId);
@@ -127,6 +135,17 @@ function joinRoomHandler(socket, socketState, { io, roomState, messageService, d
         ...roomInfo,
         isCreator: roomInfo.creatorSession === socket.id
       } : { id: roomId, isCreator: false };
+      
+      // 向当前用户发送历史消息和房间信息
+      console.log(
+        "[join_room] emitting history",
+        JSON.stringify({
+          socketId: socket.id,
+          roomId,
+          nickname: name,
+          count: Array.isArray(history) ? history.length : -1,
+        })
+      );
       
       // 向当前用户发送历史消息和房间信息
       socket.emit("history", history);

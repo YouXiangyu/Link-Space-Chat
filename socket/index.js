@@ -28,17 +28,12 @@ function registerSocketHandlers({ io, roomState, rateLimiter, messageService, db
     rateLimiter.initSocket(socket.id);
     
     // 清理断开连接的socket记录
+    // 清理断开连接的socket记录
     socket.on("disconnect", () => {
       rateLimiter.cleanupSocket(socket.id);
-      // 选择C：空房立即重置，断开时立即清理用户与房间
+      // 修复：断开连接不再立刻清空房间，使用延迟清理，避免短暂网络抖动导致消息被误删
       if (socketState.joinedRoomId) {
-        const removed = roomState.removeUserImmediate(socket.id, socketState.joinedRoomId, db);
-        if (removed) {
-          // 广播房间用户列表更新
-          const users = roomState.getUsers(socketState.joinedRoomId);
-          io.to(socketState.joinedRoomId).emit("room_users", users);
-          console.log(`User disconnected from room ${socketState.joinedRoomId}`);
-        }
+        roomState.scheduleRemoval(socket.id, socketState.joinedRoomId, db);
       }
     });
     
