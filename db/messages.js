@@ -1,24 +1,31 @@
-// --- db/messages.js ---
-// 消息相关数据库操作
+/**
+ * 消息相关数据库操作
+ * 
+ * 这个模块提供消息数据的增删改查功能。
+ * 消息信息存储在 messages 表中，包括消息ID、房间ID、昵称、内容、时间等。
+ */
 
 /**
- * 保存一条消息
- * @param {Object} db - SQLite数据库实例
- * @param {Object} params - 消息参数
- * @param {string} params.roomId - 房间ID
- * @param {string} params.nickname - 昵称
+ * 保存一条消息到数据库
+ * 
+ * 当用户发送消息时，调用此函数将消息保存到数据库。
+ * 保存后，消息会永久存储在 chat.db 文件中，即使服务器重启也不会丢失。
+ * 
+ * @param {Object} db - SQLite 数据库实例
+ * @param {Object} params - 消息参数对象
+ * @param {string} params.roomId - 房间ID（消息属于哪个房间）
+ * @param {string} params.nickname - 发送者昵称
  * @param {string} params.text - 消息内容
- * @param {number} params.createdAt - 创建时间戳
- * @param {string} params.contentType - 消息类型（默认'text'）
- * @param {number} params.parentMessageId - 父消息ID（可选，Phase 3）
- * @param {boolean} params.isHighlighted - 是否高亮（可选，Phase 3）
- * @returns {Promise<Object>} 保存的消息对象
+ * @param {number} params.createdAt - 创建时间戳（毫秒）
+ * @param {number} params.parentMessageId - 父消息ID（可选，用于回复功能，表示这条消息是回复哪条消息的）
+ * @param {boolean} params.isHighlighted - 是否高亮（可选，用于标题消息，如 # 开头的消息）
+ * @returns {Promise<Object>} 保存的消息对象（包含数据库生成的 id）
  */
-function saveMessage(db, { roomId, nickname, text, createdAt, contentType = 'text', parentMessageId = null, isHighlighted = false }) {
+function saveMessage(db, { roomId, nickname, text, createdAt, parentMessageId = null, isHighlighted = false }) {
   return new Promise((resolve, reject) => {
     db.run(
-      "INSERT INTO messages(room_id, nickname, text, created_at, content_type, parent_message_id, is_highlighted) VALUES(?, ?, ?, ?, ?, ?, ?)",
-      [roomId, nickname, text, createdAt, contentType, parentMessageId, isHighlighted ? 1 : 0],
+      "INSERT INTO messages(room_id, nickname, text, created_at, parent_message_id, is_highlighted) VALUES(?, ?, ?, ?, ?, ?)",
+      [roomId, nickname, text, createdAt, parentMessageId, isHighlighted ? 1 : 0],
       function (err) {
         if (err) return reject(err);
         resolve({ 
@@ -27,7 +34,6 @@ function saveMessage(db, { roomId, nickname, text, createdAt, contentType = 'tex
           nickname, 
           text, 
           createdAt, 
-          contentType,
           parentMessageId: parentMessageId || null,
           isHighlighted: isHighlighted || false
         });
@@ -37,23 +43,31 @@ function saveMessage(db, { roomId, nickname, text, createdAt, contentType = 'tex
 }
 
 /**
- * 获取指定房间最近 limit 条消息（按时间升序返回）
- * 优化：只查询需要的字段，减少数据传输
- * @param {Object} db - SQLite数据库实例
+ * 获取指定房间最近的消息（用于加载历史记录）
+ * 
+ * 当用户加入房间时，调用此函数加载最近的消息，让用户看到聊天历史。
+ * 
+ * 查询逻辑：
+ * 1. 查找指定房间的所有消息
+ * 2. 按创建时间倒序排列（最新的在前）
+ * 3. 限制返回数量（默认20条）
+ * 4. 反转数组，使时间从旧到新（方便前端按时间顺序显示）
+ * 
+ * @param {Object} db - SQLite 数据库实例
  * @param {string} roomId - 房间ID
- * @param {number} limit - 消息数量限制，默认20
- * @returns {Promise<Array>} 消息列表
+ * @param {number} limit - 消息数量限制，默认20条
+ * @returns {Promise<Array>} 消息列表（按时间从旧到新排列）
  */
 function getRecentMessages(db, roomId, limit = 20) {
   return new Promise((resolve, reject) => {
-    // Phase 3: 包含 parent_message_id 和 is_highlighted 字段
+    // 查询消息，按创建时间倒序排列，限制返回数量
     db.all(
-      "SELECT id, room_id as roomId, nickname, text, created_at as createdAt, content_type as contentType, parent_message_id as parentMessageId, is_highlighted as isHighlighted FROM messages WHERE room_id = ? ORDER BY created_at DESC LIMIT ?",
+      "SELECT id, room_id as roomId, nickname, text, created_at as createdAt, parent_message_id as parentMessageId, is_highlighted as isHighlighted FROM messages WHERE room_id = ? ORDER BY created_at DESC LIMIT ?",
       [roomId, limit],
       (err, rows) => {
         if (err) return reject(err);
-        // 反转数组，使时间从旧到新
-        // Phase 3: 转换 isHighlighted 为布尔值
+        // 反转数组，使时间从旧到新（数据库返回的是从新到旧）
+        // 转换 isHighlighted 为布尔值（数据库存储为 0/1）
         const processedRows = rows.reverse().map(row => ({
           ...row,
           isHighlighted: row.isHighlighted === 1 || row.isHighlighted === true,

@@ -9,13 +9,13 @@ const slowRequests = [];
 /**
  * 慢请求追踪中间件
  * 记录超过阈值的请求，供健康检查端点使用
+ * 使用 res.on('finish') 替代重写 res.end，避免与其他中间件冲突
  */
 function slowRequestTracker() {
   return (req, res, next) => {
     const startTime = Date.now();
-    const originalEnd = res.end;
     
-    res.end = function(...args) {
+    res.on('finish', () => {
       const duration = Date.now() - startTime;
       if (duration > config.monitor.slowRequestThreshold) {
         slowRequests.push({
@@ -29,8 +29,7 @@ function slowRequestTracker() {
           slowRequests.shift();
         }
       }
-      originalEnd.apply(this, args);
-    };
+    });
     
     next();
   };

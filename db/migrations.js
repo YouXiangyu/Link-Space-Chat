@@ -37,13 +37,6 @@ function migrateDatabase(db) {
         }
       });
       
-      // Phase 2: 为 messages 表添加 content_type 字段
-      db.run("ALTER TABLE messages ADD COLUMN content_type TEXT DEFAULT 'text'", (err) => {
-        if (err && !err.message.includes("duplicate column") && !err.message.includes("already exists")) {
-          console.warn("添加 messages.content_type 字段时出现警告:", err.message);
-        }
-      });
-      
       // Phase 3: 为 messages 表添加 parent_message_id 和 is_highlighted 字段
       db.run("ALTER TABLE messages ADD COLUMN parent_message_id INTEGER", (err) => {
         if (err && !err.message.includes("duplicate column") && !err.message.includes("already exists")) {

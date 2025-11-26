@@ -1,18 +1,28 @@
-// --- services/roomState.js ---
-// 房间与用户状态管理服务：集中管理房间用户 Map、延迟清理任务、房间清空重置
+/**
+ * 房间状态管理服务
+ * 
+ * 这个模块负责在内存中维护每个房间的在线用户列表。
+ * 为什么不把用户列表存在数据库里？
+ * - 用户列表是实时变化的（用户随时加入/离开），需要快速查询和更新
+ * - 数据库操作比内存操作慢，频繁读写会影响性能
+ * - 用户列表是临时数据，服务器重启后可以重新构建
+ * 
+ * 数据结构说明：
+ * - roomIdToUsers: Map<房间ID, Map<Socket连接ID, 用户昵称>>
+ *   例如：{ "room1" => { "socket123" => "张三", "socket456" => "李四" } }
+ * 
+ * 注意：当房间内所有用户都离开后，会自动清空该房间的聊天记录和密码
+ */
 
-const config = require("../config");
-
-// 房间用户映射：Map<roomId, Map<socketId, nickname>>
+// 房间用户映射：Map<房间ID, Map<Socket连接ID, 用户昵称>>
 const roomIdToUsers = new Map();
 
-// 延迟清理任务：Map<socketId, { roomId, timeout }>
-const delayedCleanupTasks = new Map();
-
 /**
- * 获取房间用户列表
+ * 获取房间的用户昵称列表
+ * 用于在侧边栏显示当前房间的在线用户
+ * 
  * @param {string} roomId - 房间ID
- * @returns {Array<string>} 用户昵称数组
+ * @returns {Array<string>} 用户昵称数组，例如 ["张三", "李四"]
  */
 function getUsers(roomId) {
   const usersMap = roomIdToUsers.get(roomId) || new Map();
@@ -40,39 +50,35 @@ function addUser(roomId, socketId, nickname) {
 }
 
 /**
- * 取消延迟清理任务（用户重新连接时调用）
- * @param {string} socketId - Socket ID
- */
-function cancelRemoval(socketId) {
-  const existingTask = delayedCleanupTasks.get(socketId);
-  if (existingTask) {
-    clearTimeout(existingTask.timeout);
-    delayedCleanupTasks.delete(socketId);
-  }
-}
-
-/**
- * 立即从房间移除用户（不延迟）
- * @param {string} socketId - Socket ID
+ * 立即从房间移除用户（当用户断开连接时调用）
+ * 
+ * 重要：如果房间内所有用户都离开了，会自动执行以下操作：
+ * 1. 清空该房间的所有聊天消息
+ * 2. 清除房间密码（变为开放房间）
+ * 3. 清除创建者信息
+ * 
+ * 这样设计的原因：
+ * - 房间是临时的，当没有人使用时应该重置状态
+ * - 避免房间密码和聊天记录永久保留，占用资源
+ * - 下次有人加入时，房间会是一个全新的状态
+ * 
+ * @param {string} socketId - Socket 连接 ID（每个用户连接都有一个唯一的 ID）
  * @param {string} roomId - 房间ID
- * @param {Object} db - 数据库实例（用于房间清空时清理数据）
- * @returns {boolean} 是否成功移除
+ * @param {Object} db - 数据库实例（用于清空消息和重置房间信息）
+ * @returns {boolean} 是否成功移除用户
  */
 function removeUserImmediate(socketId, roomId, db) {
   if (!roomId) return false;
   const usersMap = roomIdToUsers.get(roomId);
   if (usersMap && usersMap.has(socketId)) {
     usersMap.delete(socketId);
+    // 如果房间内没有用户了，重置房间状态
     if (usersMap.size === 0) {
       roomIdToUsers.delete(roomId);
-      // 房间无人后，重置房间：清空消息、置空密码与creator_session
+      // 异步执行清理操作，不阻塞主流程
       (async () => {
         try {
-          if (typeof db.clearMessagesForRoom === 'function') {
-            await db.clearMessagesForRoom(roomId);
-          } else {
-            await db.clearHistoryForRoom(roomId);
-          }
+          await db.clearMessagesForRoom(roomId);
           await db.updateRoom(roomId, { password: null, creatorSession: null });
           console.log(`Room ${roomId} reset after empty: messages cleared, password and creator reset.`);
         } catch (err) {
@@ -83,34 +89,6 @@ function removeUserImmediate(socketId, roomId, db) {
     return true;
   }
   return false;
-}
-
-/**
- * 延迟清理用户（断开连接后延迟3分钟删除，避免频繁创建）
- * @param {string} socketId - Socket ID
- * @param {string} roomId - 房间ID
- * @param {Object} db - 数据库实例
- * @returns {boolean} 是否设置了延迟清理任务
- */
-function scheduleRemoval(socketId, roomId, db) {
-  if (!roomId) return false;
-  
-  // 取消之前的清理任务（如果用户重新连接）
-  const existingTask = delayedCleanupTasks.get(socketId);
-  if (existingTask) {
-    clearTimeout(existingTask.timeout);
-    delayedCleanupTasks.delete(socketId);
-    return false; // 用户重新连接，不执行清理
-  }
-  
-  // 设置延迟清理任务
-  const timeout = setTimeout(() => {
-    removeUserImmediate(socketId, roomId, db);
-    delayedCleanupTasks.delete(socketId);
-  }, config.cleanup.delay);
-  
-  delayedCleanupTasks.set(socketId, { roomId, timeout });
-  return true;
 }
 
 /**
@@ -161,9 +139,7 @@ module.exports = {
   getUsers,
   getSnapshot,
   addUser,
-  cancelRemoval,
   removeUserImmediate,
-  scheduleRemoval,
   findSocketIdByNickname,
   getUsersMap,
   hasRoom,

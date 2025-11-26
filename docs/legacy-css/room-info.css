@@ -1,21 +1,21 @@
 /* Phase 2: Room Info Styles */
 .room-info {
   padding: 12px;
-  background: #0f192f;
+  background: var(--bg-card);
   border-radius: 8px;
-  border: 1px solid #1b2a4a;
+  border: 1px solid var(--border-primary);
 }
 
 .room-name {
   font-weight: 600;
   font-size: 16px;
-  color: #e6eaf2;
+  color: var(--text-primary);
   margin-bottom: 8px;
 }
 
 .room-description {
   font-size: 13px;
-  color: #9fb3c8;
+  color: var(--text-secondary);
   margin-bottom: 8px;
   line-height: 1.5;
 }
@@ -40,7 +40,7 @@
 
 .edit-room-btn {
   width: 100%;
-  background: #3358ff;
+  background: var(--accent-primary);
   color: white;
   border: none;
   padding: 8px 12px;
@@ -52,6 +52,6 @@
 }
 
 .edit-room-btn:hover {
-  background: #2746d8;
+  background: var(--accent-hover);
 }
 

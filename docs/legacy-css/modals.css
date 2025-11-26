@@ -21,10 +21,10 @@
 }
 
 .modal-content {
-  background: #0e1526;
+  background: var(--bg-secondary);
   padding: 24px;
   border-radius: 12px;
-  border: 1px solid #1b2a4a;
+  border: 1px solid var(--border-primary);
   width: 90%;
   max-width: 320px;
   text-align: center;
@@ -37,7 +37,7 @@
   right: 10px;
   background: none;
   border: none;
-  color: #9fb3c8;
+  color: var(--text-secondary);
   font-size: 24px;
   cursor: pointer;
 }
@@ -61,16 +61,16 @@
 
 .share-link-container input {
   flex-grow: 1;
-  background: #0f192f;
-  border: 1px solid #1b2a4a;
-  color: #e6eaf2;
+  background: var(--bg-input);
+  border: 1px solid var(--border-primary);
+  color: var(--text-primary);
   border-radius: 8px;
   padding: 10px 12px;
   font-size: 14px;
 }
 
 .share-link-container button {
-  background: #3358ff;
+  background: var(--accent-primary);
   color: white;
   border: none;
   padding: 10px 16px;
@@ -80,27 +80,27 @@
 }
 
 .share-link-container button:hover {
-  background: #2746d8;
+  background: var(--accent-hover);
 }
 
 /* Phase 2: Modal Content Enhancement */
 .modal-content h3 {
   margin: 0 0 20px 0;
-  color: #e6eaf2;
+  color: var(--text-primary);
   font-size: 20px;
 }
 
 .modal-content p {
   margin: 0 0 16px 0;
-  color: #9fb3c8;
+  color: var(--text-secondary);
   font-size: 14px;
 }
 
 .readonly-field {
   text-align: left;
-  background: #0f192f;
-  border: 1px solid #1b2a4a;
-  color: #e6eaf2;
+  background: var(--bg-input);
+  border: 1px solid var(--border-primary);
+  color: var(--text-primary);
   border-radius: 8px;
   padding: 10px 12px;
   font-size: 14px;
@@ -114,23 +114,23 @@
 }
 .readonly-input {
   flex: 1;
-  background: #0f192f;
-  border: 1px solid #1b2a4a;
-  color: #e6eaf2;
+  background: var(--bg-input);
+  border: 1px solid var(--border-primary);
+  color: var(--text-primary);
   border-radius: 8px;
   padding: 10px 12px;
   font-size: 14px;
 }
 .icon-btn {
-  background: #1b2a4a;
-  color: #9fb3c8;
-  border: 1px solid #2a3f6a;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-primary);
   border-radius: 8px;
   padding: 8px 10px;
   cursor: pointer;
 }
 .icon-btn:hover {
-  background: #24385f;
-  color: #e6eaf2;
+  background: var(--bg-hover);
+  color: var(--text-primary);
 }
 

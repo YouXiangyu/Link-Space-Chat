@@ -27,9 +27,6 @@ function registerSocketHandlers({ io, roomState, rateLimiter, messageService, db
     // 初始化消息时间记录
     rateLimiter.initSocket(socket.id);
     
-    // 如果用户重新连接，取消延迟清理任务
-    roomState.cancelRemoval(socket.id);
-    
     // 清理断开连接的socket记录
     socket.on("disconnect", () => {
       rateLimiter.cleanupSocket(socket.id);
