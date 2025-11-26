@@ -202,7 +202,6 @@ import { appState } from './core/appState.js';
   socketManager.registerCallbacks({
     onServerPing: () => {},
     onHistory: (list) => {
-      console.log("[onHistory] got list length:", Array.isArray(list) ? list.length : list, list);
       if (!elements.messages || appState.historyProcessing) return;
 
       appState.historyProcessing = true;

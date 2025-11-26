@@ -31,9 +31,13 @@ function registerSocketHandlers({ io, roomState, rateLimiter, messageService, db
     // 清理断开连接的socket记录
     socket.on("disconnect", () => {
       rateLimiter.cleanupSocket(socket.id);
-      // 修复：断开连接不再立刻清空房间，使用延迟清理，避免短暂网络抖动导致消息被误删
       if (socketState.joinedRoomId) {
-        roomState.scheduleRemoval(socket.id, socketState.joinedRoomId, db);
+        const roomId = socketState.joinedRoomId;
+        const removed = roomState.removeUserImmediate(socket.id, roomId, db);
+        if (removed) {
+          const users = roomState.getUsers(roomId);
+          io.to(roomId).emit("room_users", users);
+        }
       }
     });
     

@@ -1,13 +1,8 @@
 // --- services/roomState.js ---
-// 房间与用户状态管理服务：集中管理房间用户 Map、延迟清理任务、房间清空重置
-
-const config = require("../config");
+// 房间与用户状态管理服务：集中管理房间用户 Map、房间清空重置
 
 // 房间用户映射：Map<roomId, Map<socketId, nickname>>
 const roomIdToUsers = new Map();
-
-// 延迟清理任务：Map<socketId, { roomId, timeout }>
-const delayedCleanupTasks = new Map();
 
 /**
  * 获取房间用户列表
@@ -40,18 +35,6 @@ function addUser(roomId, socketId, nickname) {
 }
 
 /**
- * 取消延迟清理任务（用户重新连接时调用）
- * @param {string} socketId - Socket ID
- */
-function cancelRemoval(socketId) {
-  const existingTask = delayedCleanupTasks.get(socketId);
-  if (existingTask) {
-    clearTimeout(existingTask.timeout);
-    delayedCleanupTasks.delete(socketId);
-  }
-}
-
-/**
  * 立即从房间移除用户（不延迟）
  * @param {string} socketId - Socket ID
  * @param {string} roomId - 房间ID
@@ -79,33 +62,6 @@ function removeUserImmediate(socketId, roomId, db) {
     return true;
   }
   return false;
-}
-
-/**
- * 延迟清理用户（断开连接后延迟3分钟删除，避免频繁创建）
- * @param {string} socketId - Socket ID
- * @param {string} roomId - 房间ID
- * @param {Object} db - 数据库实例
- * @returns {boolean} 是否设置了延迟清理任务
- */
-function scheduleRemoval(socketId, roomId, db) {
-  if (!roomId) return false;
-
-  // 如果之前已经有延迟任务，说明这是“重新连接”，直接取消旧任务即可
-  const existingTask = delayedCleanupTasks.get(socketId);
-  if (existingTask) {
-    clearTimeout(existingTask.timeout);
-    delayedCleanupTasks.delete(socketId);
-    return false;
-  }
-
-  const timeout = setTimeout(() => {
-    removeUserImmediate(socketId, roomId, db);
-    delayedCleanupTasks.delete(socketId);
-  }, config.cleanup.delay);
-
-  delayedCleanupTasks.set(socketId, { roomId, timeout });
-  return true;
 }
 
 /**
@@ -156,9 +112,7 @@ module.exports = {
   getUsers,
   getSnapshot,
   addUser,
-  cancelRemoval,
   removeUserImmediate,
-  scheduleRemoval,
   findSocketIdByNickname,
   getUsersMap,
   hasRoom,
