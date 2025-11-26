@@ -286,10 +286,6 @@ import { appState } from './core/appState.js';
       e.preventDefault();
       e.stopPropagation();
 
-      if (appState.joined) {
-        roomController.leaveCurrentRoom();
-      }
-
       const nickname = elements.nicknameInput ? elements.nicknameInput.value.trim() : "";
       if (!nickname) {
         alert("请输入一个昵称");
@@ -304,6 +300,22 @@ import { appState } from './core/appState.js';
       const password = (elements.roomPasswordInput && elements.roomPasswordInput.style.display !== 'none')
         ? (elements.roomPasswordInput.value.trim() || null)
         : null;
+
+      const alreadyInSameRoom =
+        appState.joined &&
+        socketManager.isConnected() &&
+        socketManager.raw?.connected &&
+        appState.currentRoomId === roomId &&
+        appState.myNickname === nickname;
+
+      if (alreadyInSameRoom) {
+        console.log("[Join] 已经在当前房间，无需重复加入");
+        return;
+      }
+
+      if (appState.joined) {
+        roomController.leaveCurrentRoom();
+      }
 
       roomController.joinRoom(roomId, nickname, password);
     });
