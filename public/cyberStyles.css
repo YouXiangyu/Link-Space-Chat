@@ -613,6 +613,189 @@
   .cyber-message-content {
     max-width: 85%;
   }
+
+  /* 修复移动端视口高度问题 */
+  html, body {
+    height: 100%;
+    height: 100dvh; /* 使用动态视口高度，考虑虚拟键盘 */
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+    touch-action: pan-y; /* 允许垂直滚动 */
+  }
+
+  /* 修复登录页面居中问题 */
+  #login-overlay {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  #login-overlay > div {
+    width: 100%;
+    max-width: 100%;
+    margin: auto;
+  }
+
+  #login-overlay .relative {
+    padding: 1.5rem !important; /* 减少移动端内边距 */
+  }
+
+  /* 修复登录页面表单布局 */
+  #login-overlay .grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+
+  /* 修复密码模态框居中 */
+  #passwordModal {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  #passwordModal > div {
+    width: 100%;
+    max-width: 100%;
+    margin: auto;
+  }
+
+  #passwordModal .relative {
+    padding: 1.5rem !important; /* 减少移动端内边距 */
+  }
+
+  /* 修复预填模态框居中 */
+  #prefillJoinModal {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  #prefillJoinModal > div {
+    width: 100%;
+    max-width: 100%;
+    margin: auto;
+  }
+
+  #prefillJoinModal .relative {
+    padding: 1.5rem !important; /* 减少移动端内边距 */
+  }
+
+  /* 修复主界面布局 - 固定顶部菜单栏 */
+  #main-interface {
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+  }
+
+  #main-interface > section {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* 固定顶部状态栏 */
+  #main-interface header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    flex-shrink: 0;
+    background: rgba(5, 5, 5, 0.95);
+    backdrop-filter: blur(10px);
+  }
+
+  /* 修复消息容器 - 可滚动 */
+  #messages {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 100px; /* 为底部输入框留出空间 */
+    min-height: 0; /* 允许flex子元素缩小 */
+  }
+
+  /* 固定底部输入框 */
+  #main-interface > section > div:last-child {
+    position: sticky;
+    bottom: 0;
+    z-index: 100;
+    flex-shrink: 0;
+    background: rgba(5, 5, 5, 0.95);
+    backdrop-filter: blur(10px);
+    padding-bottom: env(safe-area-inset-bottom, 0); /* 适配iPhone底部安全区域 */
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  /* 修复回复栏 */
+  #reply-bar {
+    position: sticky;
+    bottom: 0;
+    z-index: 99;
+    flex-shrink: 0;
+  }
+
+  /* 当回复栏显示时，调整输入框位置 */
+  #reply-bar:not(.hidden) + div {
+    transform: translateY(-40px); /* 回复栏高度 */
+  }
+
+  /* 修复虚拟键盘弹出时的布局 */
+  @supports (-webkit-touch-callout: none) {
+    /* iOS Safari */
+    #main-interface {
+      height: -webkit-fill-available;
+    }
+    
+    /* 当输入框聚焦时，确保消息区域可以滚动 */
+    #messageInput:focus ~ *,
+    #messageInput:focus {
+      scroll-margin-bottom: 200px;
+    }
+  }
+
+  /* 防止输入框聚焦时页面被推上去 */
+  #messageInput:focus {
+    scroll-margin: 0;
+  }
+
+  /* 优化输入框在移动端的显示 */
+  #messageForm {
+    max-width: 100%;
+  }
+
+  /* 确保模态框在移动端可以滚动 */
+  .cyber-modal {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    align-items: flex-start;
+    padding-top: 20px;
+    padding-bottom: 20px;
+  }
+
+  .cyber-modal > div {
+    margin-top: auto;
+    margin-bottom: auto;
+  }
 }
 
 /* 项目链接样式 */

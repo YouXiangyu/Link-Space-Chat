@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>LINK_SPACE // TERMINAL</title>
 
   <!-- 字体与图标 -->
@@ -69,8 +69,8 @@
   <div class="noise-layer"></div>
 
   <!-- 全屏登录/加入房间层 (初始显示，加入后隐藏) -->
-  <div id="login-overlay" class="absolute inset-0 z-50 bg-void flex items-center justify-center p-6">
-    <div class="w-full max-w-lg relative">
+  <div id="login-overlay" class="fixed inset-0 z-50 bg-void flex items-center justify-center p-4 md:p-6 overflow-y-auto">
+    <div class="w-full max-w-lg relative my-auto">
       <!-- 装饰边框 -->
       <div class="absolute -inset-1 bg-gradient-to-r from-acid to-electric opacity-30 blur"></div>
 
@@ -90,7 +90,7 @@
               class="cyber-input w-full" maxlength="24" />
           </div>
 
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label class="block text-xs text-gray-500 mb-1" data-i18n="targetNode">TARGET_NODE (ROOM ID)</label>
               <input type="text" id="roomIdInput" data-i18n-placeholder="global" placeholder="GLOBAL"
@@ -322,7 +322,7 @@
 
   <!-- 密码输入模态框 -->
   <div id="passwordModal" class="cyber-modal hidden">
-    <div class="w-full max-w-lg relative">
+    <div class="w-full max-w-lg relative my-auto">
       <!-- 装饰边框 -->
       <div class="absolute -inset-1 bg-gradient-to-r from-acid to-electric opacity-30 blur"></div>
 
@@ -378,7 +378,7 @@
 
   <!-- 预填加入模态框 -->
   <div id="prefillJoinModal" class="cyber-modal hidden">
-    <div class="w-full max-w-lg relative">
+    <div class="w-full max-w-lg relative my-auto">
       <!-- 装饰边框 -->
       <div class="absolute -inset-1 bg-gradient-to-r from-acid to-electric opacity-30 blur"></div>
 
@@ -403,7 +403,7 @@
               maxlength="24" class="cyber-input w-full" />
           </div>
 
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label class="block text-xs text-gray-500 mb-1" data-i18n="targetNode">TARGET_NODE (ROOM ID)</label>
               <input type="text" id="prefillRoomId" data-i18n-placeholder="roomId" placeholder="房间ID" maxlength="40"

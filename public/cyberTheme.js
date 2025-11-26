@@ -159,6 +159,71 @@ export const cyberTheme = {
         }
       }
     });
+
+    // 处理移动端虚拟键盘
+    this.setupMobileKeyboardHandling();
+  },
+
+  /**
+   * 处理移动端虚拟键盘弹出时的布局调整
+   */
+  setupMobileKeyboardHandling() {
+    if (!this.elements.messageInput || !this.elements.messages) return;
+
+    const isMobile = window.innerWidth <= 768;
+    if (!isMobile) return;
+
+    let initialViewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    let keyboardVisible = false;
+
+    // 监听输入框聚焦
+    this.elements.messageInput.addEventListener('focus', () => {
+      keyboardVisible = true;
+      // 延迟滚动，确保键盘已弹出
+      setTimeout(() => {
+        if (this.elements.messages) {
+          // 滚动到底部，确保输入框可见
+          this.elements.messages.scrollTop = this.elements.messages.scrollHeight;
+        }
+      }, 300);
+    });
+
+    // 监听输入框失焦
+    this.elements.messageInput.addEventListener('blur', () => {
+      keyboardVisible = false;
+    });
+
+    // 使用 Visual Viewport API（如果可用）来检测键盘
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', () => {
+        const currentHeight = window.visualViewport.height;
+        const heightDiff = initialViewportHeight - currentHeight;
+        
+        // 如果高度差超过150px，认为键盘已弹出
+        if (heightDiff > 150) {
+          keyboardVisible = true;
+          // 确保消息区域可以滚动
+          if (this.elements.messages) {
+            setTimeout(() => {
+              this.elements.messages.scrollTop = this.elements.messages.scrollHeight;
+            }, 100);
+          }
+        } else {
+          keyboardVisible = false;
+        }
+      });
+    }
+
+    // 监听窗口大小变化（备用方案）
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (keyboardVisible && this.elements.messages) {
+          this.elements.messages.scrollTop = this.elements.messages.scrollHeight;
+        }
+      }, 100);
+    });
   },
 
   /**
