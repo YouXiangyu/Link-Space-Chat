@@ -828,3 +828,180 @@
   overflow: hidden;
 }
 
+/* ==================== 投票相关样式 ==================== */
+
+/* 投票消息容器 */
+.poll-message {
+  background: rgba(10, 10, 10, 0.6);
+  border: 1px solid rgba(204, 255, 0, 0.2);
+}
+
+.poll-container {
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(204, 255, 0, 0.1);
+}
+
+.poll-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  font-weight: 700;
+  color: #CCFF00;
+  margin-bottom: 8px;
+}
+
+.poll-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  font-size: 11px;
+  color: #999;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.poll-total-votes {
+  color: #CCFF00;
+}
+
+.poll-expired {
+  color: #ff4444;
+}
+
+/* 投票选项容器 */
+.poll-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.poll-option {
+  position: relative;
+  padding: 10px 12px;
+  background: rgba(10, 10, 10, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.poll-option:hover:not(.poll-option-disabled) {
+  border-color: rgba(204, 255, 0, 0.5);
+  background: rgba(204, 255, 0, 0.05);
+  transform: translateX(2px);
+}
+
+.poll-option-voted {
+  border-color: rgba(204, 255, 0, 0.6);
+  background: rgba(204, 255, 0, 0.1);
+}
+
+.poll-option-disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.poll-option-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.poll-option-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: #fff;
+  flex: 1;
+}
+
+.poll-option-stats {
+  display: flex;
+  gap: 8px;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  color: #999;
+}
+
+.poll-option-count {
+  color: #CCFF00;
+}
+
+.poll-option-percent {
+  color: #9efeff;
+}
+
+/* 投票进度条 */
+.poll-option-bar {
+  height: 3px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+}
+
+.poll-option-progress {
+  height: 100%;
+  background: linear-gradient(90deg, #CCFF00, #9efeff);
+  transition: width 0.5s ease;
+  box-shadow: 0 0 8px rgba(204, 255, 0, 0.5);
+}
+
+/* 创建投票模态框样式 */
+.poll-options-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.poll-option-input-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.poll-option-input {
+  flex: 1;
+  background: rgba(10, 10, 10, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 10px 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: #fff;
+  transition: all 0.3s;
+  outline: none;
+}
+
+.poll-option-input:focus {
+  border-color: rgba(204, 255, 0, 0.5);
+  background: rgba(10, 10, 10, 0.9);
+}
+
+.poll-option-remove-btn {
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 68, 68, 0.2);
+  border: 1px solid rgba(255, 68, 68, 0.4);
+  color: #ff4444;
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.poll-option-remove-btn:hover:not(:disabled) {
+  background: rgba(255, 68, 68, 0.3);
+  border-color: rgba(255, 68, 68, 0.6);
+  transform: scale(1.1);
+}
+
+.poll-option-remove-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+

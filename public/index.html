@@ -150,6 +150,7 @@
       <!-- 底部操作区 -->
       <div class="p-4 border-t border-white/10 space-y-2">
         <button id="shareBtn" class="cyber-button-small w-full" data-i18n="shareRoom">SHARE ROOM</button>
+        <button id="createPollBtn" class="cyber-button-small w-full" style="display: none;">创建投票</button>
         <button id="leaveBtn" class="cyber-button-small w-full bg-red-900/30 border-red-500/50 hover:bg-red-900/50"
           style="display: none;" data-i18n="leaveRoom">LEAVE ROOM</button>
         <button id="searchToggleBtn" class="cyber-button-small w-full" data-i18n="search">SEARCH</button>
@@ -188,6 +189,7 @@
         </div>
         <div class="space-y-2">
           <button id="mobile-shareBtn" class="cyber-button-small w-full" data-i18n="shareRoom">SHARE ROOM</button>
+          <button id="mobile-createPollBtn" class="cyber-button-small w-full" style="display: none;">创建投票</button>
           <button id="mobile-leaveBtn" class="cyber-button-small w-full bg-red-900/30 border-red-500/50"
             style="display: none;" data-i18n="leaveRoom">LEAVE ROOM</button>
           <button id="mobile-searchToggleBtn" class="cyber-button-small w-full" data-i18n="search">SEARCH</button>
@@ -315,6 +317,36 @@
         <div class="cyber-form-actions">
           <button type="submit" class="cyber-button" data-i18n="save">SAVE</button>
           <button type="button" id="cancelEditBtn" class="cyber-button-cancel" data-i18n="cancelBtn">CANCEL</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 创建投票模态框 -->
+  <div id="createPollModal" class="cyber-modal hidden">
+    <div class="cyber-modal-content">
+      <button id="closeCreatePollBtn" class="cyber-modal-close">&times;</button>
+      <h3 class="cyber-modal-title">创建投票</h3>
+      <form id="createPollForm" class="cyber-form">
+        <div class="cyber-form-group">
+          <label>投票标题</label>
+          <input type="text" id="pollTitleInput" placeholder="请输入投票标题" maxlength="200" class="cyber-input" required />
+        </div>
+        <div class="cyber-form-group">
+          <label>投票选项 <span class="text-xs text-gray-400">(2-10个)</span></label>
+          <div id="pollOptionsContainer" class="poll-options-container">
+            <!-- 选项输入框将动态添加 -->
+          </div>
+          <button type="button" id="addPollOptionBtn" class="cyber-button-small mt-2">+ 添加选项</button>
+        </div>
+        <div class="cyber-form-group">
+          <label>截止时间 <span class="text-xs text-gray-400">(可选)</span></label>
+          <input type="datetime-local" id="pollExpiresAtInput" class="cyber-input" />
+          <small class="text-xs text-gray-400">设置后，投票将在指定时间后过期</small>
+        </div>
+        <div class="cyber-form-actions">
+          <button type="submit" class="cyber-button">创建投票</button>
+          <button type="button" id="cancelCreatePollBtn" class="cyber-button-cancel">取消</button>
         </div>
       </form>
     </div>

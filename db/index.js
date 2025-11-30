@@ -47,6 +47,7 @@ const migrations = require("./migrations");
 const rooms = require("./rooms");
 const messages = require("./messages");
 const stats = require("./stats");
+const polls = require("./polls");
 
 /**
  * 初始化数据库表结构
@@ -120,6 +121,15 @@ module.exports = {
   clearAllData: () => messages.clearAllData(db),
   // 统计相关操作
   getDatabaseStats: () => stats.getDatabaseStats(db, dbPath),
-  checkConnection: () => stats.checkConnection(db)
+  checkConnection: () => stats.checkConnection(db),
+  // 投票相关操作
+  createPoll: (params) => polls.createPoll(db, params),
+  getPollByMessageId: (messageId) => polls.getPollByMessageId(db, messageId),
+  getPollResults: (pollId) => polls.getPollResults(db, pollId),
+  castVote: (params) => polls.castVote(db, params),
+  getUserVote: (params) => polls.getUserVote(db, params),
+  deletePollByMessageId: (messageId) => polls.deletePollByMessageId(db, messageId),
+  isPollExpired: (pollId) => polls.isPollExpired(db, pollId),
+  getMessageIdByPollId: (pollId) => polls.getMessageIdByPollId(db, pollId)
 };
 
