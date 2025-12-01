@@ -231,6 +231,13 @@ export function createPollController({
       });
     }
 
+    // 绑定右上角关闭按钮
+    if (elements.closeCreatePollBtn) {
+      elements.closeCreatePollBtn.addEventListener('click', () => {
+        hideCreatePollModal();
+      });
+    }
+
     // 绑定关闭按钮（点击模态框外部）
     if (elements.createPollModal) {
       elements.createPollModal.addEventListener('click', (e) => {
