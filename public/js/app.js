@@ -233,6 +233,11 @@ import { appState } from './core/appState.js';
     copyLinkBtn: elements.copyLinkBtn
   });
 
+  // 监听离开房间事件，重置预填模态框标志
+  eventBus.on('room:left', () => {
+    prefillModalOpened = false;
+  });
+
   // Socket 事件监听
   socketManager.registerCallbacks({
     onServerPing: () => {},
@@ -342,9 +347,16 @@ import { appState } from './core/appState.js';
   });
 
   // 设置加入按钮事件
+  let joinButtonCheckCount = 0;
   function setupJoinButton() {
     if (!elements.joinBtn) {
-      setTimeout(setupJoinButton, 200);
+      // 使用更短的延迟和更可靠的检查
+      joinButtonCheckCount++;
+      if (joinButtonCheckCount > 50) {
+        console.error('Failed to find joinBtn after 50 attempts');
+        return;
+      }
+      setTimeout(setupJoinButton, 100);
       return;
     }
 
@@ -352,7 +364,7 @@ import { appState } from './core/appState.js';
       return;
     }
 
-    elements.joinBtn.addEventListener("click", (e) => {
+    const handleJoinClick = (e) => {
       e.preventDefault();
       e.stopPropagation();
 
@@ -376,8 +388,12 @@ import { appState } from './core/appState.js';
         : null;
 
       roomController.joinRoom(roomId, nickname, password);
-    });
+    };
 
+    // 使用多种方式绑定事件，确保在小窗口下也能工作
+    elements.joinBtn.addEventListener("click", handleJoinClick);
+    elements.joinBtn.addEventListener("touchstart", handleJoinClick);
+    
     elements.joinBtn.dataset.listenerAttached = 'true';
   }
 
@@ -544,13 +560,27 @@ import { appState } from './core/appState.js';
 
   const { nickname: qsNickname, password: qsPassword } = getSearchParams();
   const shouldOpenPrefill = Boolean(appState.currentRoomId) || Boolean(qsNickname) || Boolean(qsPassword);
+  let prefillModalOpened = false; // 防止重复打开
 
   function openPrefillModalIfNeeded() {
+    // 如果已经加入房间，不打开模态框
+    if (appState.joined) {
+      return;
+    }
+    
+    // 如果模态框已经打开过，不再打开
+    if (prefillModalOpened) {
+      return;
+    }
+    
     if (!elements.prefillJoinModal || !shouldOpenPrefill) return;
+    
     if (elements.prefillNickname) elements.prefillNickname.value = qsNickname || (elements.nicknameInput ? elements.nicknameInput.value : "") || "";
     if (elements.prefillRoomId) elements.prefillRoomId.value = appState.currentRoomId || (elements.roomIdInput ? elements.roomIdInput.value : "") || "";
     if (elements.prefillPassword) elements.prefillPassword.value = qsPassword || "";
+    
     modalManager.openPrefillModal();
+    prefillModalOpened = true;
   }
 
   if (elements.prefillConfirmBtn) {
@@ -569,12 +599,30 @@ import { appState } from './core/appState.js';
       }
 
       if (elements.joinBtn) {
-        elements.joinBtn.dispatchEvent(new Event("click"));
+        // 确保事件能正确触发
+        const clickEvent = new MouseEvent("click", {
+          bubbles: true,
+          cancelable: true,
+          view: window
+        });
+        elements.joinBtn.dispatchEvent(clickEvent);
       }
 
       modalManager.closePrefillModal();
     });
   }
+  
+  // 监听窗口大小变化，避免重复打开模态框
+  let resizeTimeout;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+      // 窗口大小变化时，如果已经加入房间，确保不打开模态框
+      if (appState.joined && elements.prefillJoinModal && !elements.prefillJoinModal.classList.contains('hidden')) {
+        modalManager.closePrefillModal();
+      }
+    }, 300);
+  });
 
   // 初始化
   if (document.readyState === 'loading') {

@@ -57,6 +57,11 @@ export class RoomController {
     }
 
     this.helpers.updateRoomInfo?.(null);
+    
+    // 触发离开房间事件
+    if (typeof window !== 'undefined' && window.eventBus) {
+      window.eventBus.emit('room:left');
+    }
   }
 
   joinRoom(roomId, nickname, password = null) {
@@ -162,6 +167,12 @@ export class RoomController {
 
       if (cyberTheme?.closeMobileSidebar) {
         cyberTheme.closeMobileSidebar();
+      }
+      
+      // 关闭预填加入模态框（如果打开）
+      const prefillModal = document.getElementById("prefillJoinModal");
+      if (prefillModal && !prefillModal.classList.contains("hidden")) {
+        prefillModal.classList.add("hidden");
       }
     });
   }
