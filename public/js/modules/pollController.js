@@ -202,6 +202,13 @@ export function createPollController({
       });
     }
 
+    // 绑定移动端创建投票按钮
+    if (elements.mobileCreatePollBtn) {
+      elements.mobileCreatePollBtn.addEventListener('click', () => {
+        showCreatePollModal();
+      });
+    }
+
     // 绑定创建投票表单提交
     if (elements.createPollForm) {
       elements.createPollForm.addEventListener('submit', (e) => {
@@ -242,4 +249,6 @@ export function createPollController({
     handleCreatePoll
   };
 }
+
+
 

@@ -194,6 +194,8 @@ import { appState } from './core/appState.js';
     messageMap,
     elements: {
       createPollModal: elements.createPollModal,
+      createPollBtn: elements.createPollBtn,
+      mobileCreatePollBtn: elements.mobileCreatePollBtn,
       createPollForm: elements.createPollForm,
       pollTitleInput: elements.pollTitleInput,
       pollOptionsContainer: elements.pollOptionsContainer,
@@ -302,13 +304,7 @@ import { appState } from './core/appState.js';
       if (cyberTheme && cyberTheme.updateRoomInfo) {
         cyberTheme.updateRoomInfo(room);
       }
-      // 显示创建投票按钮（加入房间后显示）
-      if (elements.createPollBtn) {
-        elements.createPollBtn.style.display = appState.joined ? 'block' : 'none';
-      }
-      if (elements.mobileCreatePollBtn) {
-        elements.mobileCreatePollBtn.style.display = appState.joined ? 'block' : 'none';
-      }
+      // 创建投票按钮始终显示（点击时会检查是否已加入房间）
     },
     onRoomRefresh: (data) => {
       if (!elements.messages) return;
