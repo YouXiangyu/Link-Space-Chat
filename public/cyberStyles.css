@@ -1,21 +1,56 @@
 /* Cyber Theme Styles - Acid Graphics + Terminal/Brutalism */
 /* 创建时间: 2025-01-12 */
 
-/* 自定义滚动条 */
+/* 自定义滚动条 - 美化深色主题滚动条 */
 .cyber-scroll::-webkit-scrollbar {
-  width: 4px;
+  width: 8px;
 }
 
 .cyber-scroll::-webkit-scrollbar-track {
-  background: #111;
+  background: rgba(10, 10, 10, 0.5);
+  border-radius: 4px;
 }
 
 .cyber-scroll::-webkit-scrollbar-thumb {
-  background: #CCFF00;
+  background: linear-gradient(180deg, rgba(204, 255, 0, 0.6) 0%, rgba(158, 254, 255, 0.6) 100%);
+  border-radius: 4px;
+  border: 2px solid rgba(10, 10, 10, 0.5);
+  transition: all 0.2s ease;
 }
 
 .cyber-scroll::-webkit-scrollbar-thumb:hover {
-  background: #aacc00;
+  background: linear-gradient(180deg, rgba(204, 255, 0, 0.9) 0%, rgba(158, 254, 255, 0.9) 100%);
+  border-color: rgba(10, 10, 10, 0.8);
+  box-shadow: 0 0 8px rgba(204, 255, 0, 0.4);
+}
+
+/* 全局滚动条样式（深色主题） */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(10, 10, 10, 0.5);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(204, 255, 0, 0.6) 0%, rgba(158, 254, 255, 0.6) 100%);
+  border-radius: 4px;
+  border: 2px solid rgba(10, 10, 10, 0.5);
+  transition: all 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(204, 255, 0, 0.9) 0%, rgba(158, 254, 255, 0.9) 100%);
+  border-color: rgba(10, 10, 10, 0.8);
+  box-shadow: 0 0 8px rgba(204, 255, 0, 0.4);
+}
+
+/* Firefox 滚动条（深色主题） */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(204, 255, 0, 0.6) rgba(10, 10, 10, 0.5);
 }
 
 /* 噪点背景 - 已禁用 */
@@ -137,6 +172,7 @@
     transform: translateX(100%);
     opacity: 0;
   }
+
   to {
     transform: translateX(0);
     opacity: 1;
@@ -166,6 +202,8 @@
   padding: 32px;
   max-width: 500px;
   width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
   position: relative;
   box-shadow: 0 0 30px rgba(204, 255, 0, 0.1);
 }
@@ -555,6 +593,7 @@
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -562,9 +601,12 @@
 }
 
 @keyframes searchHighlight {
-  0%, 100% {
+
+  0%,
+  100% {
     background: transparent;
   }
+
   50% {
     background: rgba(204, 255, 0, 0.2);
   }
@@ -605,27 +647,30 @@
   .cyber-search-panel {
     width: 100%;
   }
-  
+
   .cyber-modal-content {
     padding: 20px;
   }
-  
+
   .cyber-message-content {
     max-width: 85%;
   }
 
   /* 修复移动端视口高度问题 */
-  html, body {
+  html,
+  body {
     height: 100%;
-    height: 100dvh; /* 使用动态视口高度，考虑虚拟键盘 */
+    height: 100dvh;
+    /* 使用动态视口高度，考虑虚拟键盘 */
     overflow: hidden;
     position: fixed;
     width: 100%;
-    touch-action: pan-y; /* 允许垂直滚动 */
+    touch-action: pan-y;
+    /* 允许垂直滚动 */
   }
 
   /* 修复登录页面居中问题 */
-  #login-overlay {
+  #login-overlay:not([style*="display: none"]) {
     display: flex !important;
     align-items: center;
     justify-content: center;
@@ -636,14 +681,15 @@
     min-height: 100dvh;
   }
 
-  #login-overlay > div {
+  #login-overlay>div {
     width: 100%;
     max-width: 100%;
     margin: auto;
   }
 
   #login-overlay .relative {
-    padding: 1.5rem !important; /* 减少移动端内边距 */
+    padding: 1.5rem !important;
+    /* 减少移动端内边距 */
   }
 
   /* 修复登录页面表单布局 */
@@ -653,7 +699,7 @@
   }
 
   /* 修复密码模态框居中 */
-  #passwordModal {
+  #passwordModal:not(.hidden) {
     display: flex !important;
     align-items: center;
     justify-content: center;
@@ -664,18 +710,19 @@
     min-height: 100dvh;
   }
 
-  #passwordModal > div {
+  #passwordModal>div {
     width: 100%;
     max-width: 100%;
     margin: auto;
   }
 
   #passwordModal .relative {
-    padding: 1.5rem !important; /* 减少移动端内边距 */
+    padding: 1.5rem !important;
+    /* 减少移动端内边距 */
   }
 
   /* 修复预填模态框居中 */
-  #prefillJoinModal {
+  #prefillJoinModal:not(.hidden) {
     display: flex !important;
     align-items: center;
     justify-content: center;
@@ -686,14 +733,15 @@
     min-height: 100dvh;
   }
 
-  #prefillJoinModal > div {
+  #prefillJoinModal>div {
     width: 100%;
     max-width: 100%;
     margin: auto;
   }
 
   #prefillJoinModal .relative {
-    padding: 1.5rem !important; /* 减少移动端内边距 */
+    padding: 1.5rem !important;
+    /* 减少移动端内边距 */
   }
 
   /* 修复主界面布局 - 固定顶部菜单栏 */
@@ -706,7 +754,7 @@
     position: relative;
   }
 
-  #main-interface > section {
+  #main-interface>section {
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -730,19 +778,23 @@
     overflow-y: auto;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
-    padding-bottom: 100px; /* 为底部输入框留出空间 */
-    min-height: 0; /* 允许flex子元素缩小 */
+    padding-bottom: 100px;
+    /* 为底部输入框留出空间 */
+    min-height: 0;
+    /* 允许flex子元素缩小 */
   }
 
   /* 固定底部输入框 */
-  #main-interface > section > div:last-child {
+  #main-interface>section>div:last-child {
     position: sticky;
     bottom: 0;
     z-index: 100;
     flex-shrink: 0;
-    background: rgba(5, 5, 5, 0.95);
+    background: rgba(5, 5, 5, 0.3);
+    /* 使用半透明背景，与整体背景融合，不再显示明显的黑色条 */
     backdrop-filter: blur(10px);
-    padding-bottom: env(safe-area-inset-bottom, 0); /* 适配iPhone底部安全区域 */
+    padding-bottom: env(safe-area-inset-bottom, 0);
+    /* 适配iPhone底部安全区域 */
     border-top: 1px solid rgba(255, 255, 255, 0.1);
   }
 
@@ -755,19 +807,21 @@
   }
 
   /* 当回复栏显示时，调整输入框位置 */
-  #reply-bar:not(.hidden) + div {
-    transform: translateY(-40px); /* 回复栏高度 */
+  #reply-bar:not(.hidden)+div {
+    transform: translateY(-40px);
+    /* 回复栏高度 */
   }
 
   /* 修复虚拟键盘弹出时的布局 */
   @supports (-webkit-touch-callout: none) {
+
     /* iOS Safari */
     #main-interface {
       height: -webkit-fill-available;
     }
-    
+
     /* 当输入框聚焦时，确保消息区域可以滚动 */
-    #messageInput:focus ~ *,
+    #messageInput:focus~*,
     #messageInput:focus {
       scroll-margin-bottom: 200px;
     }
@@ -792,7 +846,7 @@
     padding-bottom: 20px;
   }
 
-  .cyber-modal > div {
+  .cyber-modal>div {
     margin-top: auto;
     margin-bottom: auto;
   }
@@ -828,3 +882,179 @@
   overflow: hidden;
 }
 
+/* ==================== 投票相关样式 ==================== */
+
+/* 投票消息容器 */
+.poll-message {
+  background: transparent;
+  border: none;
+}
+
+.poll-container {
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(204, 255, 0, 0.1);
+}
+
+.poll-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  font-weight: 700;
+  color: #CCFF00;
+  margin-bottom: 8px;
+}
+
+.poll-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  font-size: 11px;
+  color: #999;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.poll-total-votes {
+  color: #CCFF00;
+}
+
+.poll-expired {
+  color: #ff4444;
+}
+
+/* 投票选项容器 */
+.poll-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.poll-option {
+  position: relative;
+  padding: 10px 12px;
+  background: rgba(10, 10, 10, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.poll-option:hover:not(.poll-option-disabled) {
+  border-color: rgba(204, 255, 0, 0.5);
+  background: rgba(204, 255, 0, 0.05);
+  transform: translateX(2px);
+}
+
+.poll-option-voted {
+  border-color: rgba(204, 255, 0, 0.6);
+  background: rgba(204, 255, 0, 0.1);
+}
+
+.poll-option-disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.poll-option-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.poll-option-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: #fff;
+  flex: 1;
+}
+
+.poll-option-stats {
+  display: flex;
+  gap: 8px;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  color: #999;
+}
+
+.poll-option-count {
+  color: #CCFF00;
+}
+
+.poll-option-percent {
+  color: #9efeff;
+}
+
+/* 投票进度条 */
+.poll-option-bar {
+  height: 3px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+}
+
+.poll-option-progress {
+  height: 100%;
+  background: linear-gradient(90deg, #CCFF00, #9efeff);
+  transition: width 0.5s ease;
+  box-shadow: 0 0 8px rgba(204, 255, 0, 0.5);
+}
+
+/* 创建投票模态框样式 */
+.poll-options-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.poll-option-input-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.poll-option-input {
+  flex: 1;
+  background: rgba(10, 10, 10, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 10px 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: #fff;
+  transition: all 0.3s;
+  outline: none;
+}
+
+.poll-option-input:focus {
+  border-color: rgba(204, 255, 0, 0.5);
+  background: rgba(10, 10, 10, 0.9);
+}
+
+.poll-option-remove-btn {
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 68, 68, 0.2);
+  border: 1px solid rgba(255, 68, 68, 0.4);
+  color: #ff4444;
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.poll-option-remove-btn:hover:not(:disabled) {
+  background: rgba(255, 68, 68, 0.3);
+  border-color: rgba(255, 68, 68, 0.6);
+  transform: scale(1.1);
+}
+
+.poll-option-remove-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}

@@ -280,6 +280,8 @@ body.light-theme .cyber-modal-content {
     border-radius: 16px;
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
     color: #2d3748 !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
 }
 
 body.light-theme .cyber-modal-title {
@@ -419,18 +421,43 @@ body.light-theme .cyber-project-link:hover {
     text-decoration: none !important;
 }
 
-/* Scrollbar */
-body.light-theme ::-webkit-scrollbar-track {
-    background: #f1f1f1 !important;
+/* 聊天窗格背景色 */
+body.light-theme #messages {
+    background-color: #ffffff !important;
 }
 
-body.light-theme ::-webkit-scrollbar-thumb {
-    background: #cbd5e0 !important;
+/* 修复小窗口模式下底部输入区域的背景色 */
+body.light-theme #main-interface>section>div:last-child {
+    background: #ffffff !important;
+    border-top: 1px solid #e2e8f0 !important;
+}
+
+/* Scrollbar - 美化滚动条 */
+body.light-theme ::-webkit-scrollbar {
+    width: 8px !important;
+}
+
+body.light-theme ::-webkit-scrollbar-track {
+    background: #f1f5f9 !important;
     border-radius: 4px;
 }
 
+body.light-theme ::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #cbd5e0 0%, #94a3b8 100%) !important;
+    border-radius: 4px;
+    border: 2px solid #f1f5f9;
+    transition: all 0.2s ease;
+}
+
 body.light-theme ::-webkit-scrollbar-thumb:hover {
-    background: #a0aec0 !important;
+    background: linear-gradient(180deg, #94a3b8 0%, #64748b 100%) !important;
+    border-color: #e2e8f0;
+}
+
+/* Firefox 滚动条 */
+body.light-theme * {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e0 #f1f5f9;
 }
 
 /* Icons */
@@ -443,4 +470,110 @@ body.light-theme .ri-contrast-drop-line:before {
 body.light-theme .cyber-input-group .absolute {
     display: none !important;
     /* Hide corner decorations */
+}
+
+/* Poll UI - 投票相关样式 */
+body.light-theme .poll-message {
+    background: transparent !important;
+    border: none !important;
+}
+
+body.light-theme .poll-container {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 12px;
+    padding: 16px !important;
+}
+
+body.light-theme .poll-title {
+    color: #3182ce !important;
+    font-family: 'Space Grotesk', sans-serif !important;
+}
+
+body.light-theme .poll-meta {
+    color: #718096 !important;
+    font-family: 'Space Grotesk', sans-serif !important;
+}
+
+body.light-theme .poll-total-votes {
+    color: #3182ce !important;
+}
+
+body.light-theme .poll-expired {
+    color: #e53e3e !important;
+}
+
+body.light-theme .poll-option {
+    background: #f7fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 8px;
+}
+
+body.light-theme .poll-option:hover:not(.poll-option-disabled) {
+    border-color: #3182ce !important;
+    background: #ebf8ff !important;
+    transform: translateX(2px);
+}
+
+body.light-theme .poll-option-voted {
+    border-color: #3182ce !important;
+    background: #ebf8ff !important;
+}
+
+body.light-theme .poll-option-disabled {
+    opacity: 0.6;
+    background: #edf2f7 !important;
+}
+
+body.light-theme .poll-option-text {
+    color: #2d3748 !important;
+    font-family: 'Space Grotesk', sans-serif !important;
+}
+
+body.light-theme .poll-option-stats {
+    color: #718096 !important;
+    font-family: 'Space Grotesk', sans-serif !important;
+}
+
+body.light-theme .poll-option-count {
+    color: #3182ce !important;
+}
+
+body.light-theme .poll-option-percent {
+    color: #2b6cb0 !important;
+}
+
+body.light-theme .poll-option-bar {
+    background: #e2e8f0 !important;
+}
+
+body.light-theme .poll-option-progress {
+    background: linear-gradient(90deg, #3182ce, #2b6cb0) !important;
+    box-shadow: 0 0 8px rgba(49, 130, 206, 0.3) !important;
+}
+
+/* 创建投票模态框中的选项输入框 */
+body.light-theme .poll-option-input {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #2d3748 !important;
+    font-family: 'Space Grotesk', sans-serif !important;
+}
+
+body.light-theme .poll-option-input:focus {
+    border-color: #3182ce !important;
+    background: #ffffff !important;
+    box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1) !important;
+}
+
+body.light-theme .poll-option-remove-btn {
+    background: rgba(229, 62, 62, 0.1) !important;
+    border: 1px solid rgba(229, 62, 62, 0.3) !important;
+    color: #e53e3e !important;
+    font-family: 'Space Grotesk', sans-serif !important;
+}
+
+body.light-theme .poll-option-remove-btn:hover:not(:disabled) {
+    background: rgba(229, 62, 62, 0.2) !important;
+    border-color: rgba(229, 62, 62, 0.5) !important;
 }

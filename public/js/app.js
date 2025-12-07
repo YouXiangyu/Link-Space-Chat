@@ -4,13 +4,14 @@
  * 创建时间: 2025-01-12
  */
 
-import { renderMessage, renderUsers, showRateLimitToast, showInitialGuidance, hideInitialGuidance, scrollToMessage } from '../uiAdapter.js';
+import { renderMessage, renderUsers, showRateLimitToast, showInitialGuidance, hideInitialGuidance, scrollToMessage, renderPollMessage, updatePollResults } from '../uiAdapter.js';
 import { cyberTheme } from '../cyberTheme.js';
 import { getRoomIdFromPath, formatAbsoluteTime } from './utils/index.js';
 import { SocketManager } from './modules/socketManager.js';
 import { RoomController } from './modules/roomController.js';
 import { createMessageController } from './modules/messageController.js';
 import { createSearchController } from './modules/searchController.js';
+import { createPollController } from './modules/pollController.js';
 import { ModalManager } from './modules/modalManager.js';
 import { ShareManager } from './modules/shareManager.js';
 import { eventBus } from './core/eventBus.js';
@@ -76,7 +77,17 @@ import { appState } from './core/appState.js';
     closeProjectInfoBtn: el("closeProjectInfoBtn"),
     projectInfoBtn: el("projectInfoBtn"),
     mobileProjectInfoBtn: el("mobile-projectInfoBtn"),
-    joinBtn: el("joinBtn")
+    joinBtn: el("joinBtn"),
+    createPollModal: el("createPollModal"),
+    createPollBtn: el("createPollBtn"),
+    mobileCreatePollBtn: el("mobile-createPollBtn"),
+    createPollForm: el("createPollForm"),
+    pollTitleInput: el("pollTitleInput"),
+    pollOptionsContainer: el("pollOptionsContainer"),
+    addPollOptionBtn: el("addPollOptionBtn"),
+    pollExpiresAtInput: el("pollExpiresAtInput"),
+    closeCreatePollBtn: el("closeCreatePollBtn"),
+    cancelCreatePollBtn: el("cancelCreatePollBtn")
   };
 
   // 初始化 Socket 生命周期处理器
@@ -176,6 +187,30 @@ import { appState } from './core/appState.js';
   });
   searchController.init();
 
+  // 初始化投票控制器
+  const pollController = createPollController({
+    socketManager,
+    state: appState,
+    messageMap,
+    elements: {
+      createPollModal: elements.createPollModal,
+      createPollBtn: elements.createPollBtn,
+      mobileCreatePollBtn: elements.mobileCreatePollBtn,
+      createPollForm: elements.createPollForm,
+      pollTitleInput: elements.pollTitleInput,
+      pollOptionsContainer: elements.pollOptionsContainer,
+      addPollOptionBtn: elements.addPollOptionBtn,
+      pollExpiresAtInput: elements.pollExpiresAtInput,
+      closeCreatePollBtn: elements.closeCreatePollBtn,
+      cancelCreatePollBtn: elements.cancelCreatePollBtn
+    },
+    helpers: {
+      renderPollMessage,
+      updatePollResults
+    }
+  });
+  pollController.init();
+
   // 初始化模态框管理器
   const modalManager = new ModalManager({
     shareModal: elements.shareModal,
@@ -198,6 +233,11 @@ import { appState } from './core/appState.js';
     copyLinkBtn: elements.copyLinkBtn
   });
 
+  // 监听离开房间事件，重置预填模态框标志
+  eventBus.on('room:left', () => {
+    prefillModalOpened = false;
+  });
+
   // Socket 事件监听
   socketManager.registerCallbacks({
     onServerPing: () => {},
@@ -211,7 +251,14 @@ import { appState } from './core/appState.js';
 
       for (const m of list) {
         const isMyMessage = m.nickname === appState.myNickname || m.clientId === appState.myClientId;
-        renderMessage(elements.messages, m, isMyMessage, messageMap);
+        // 如果是投票消息，使用专门的渲染函数
+        if (m.poll) {
+          renderPollMessage(elements.messages, m, isMyMessage, messageMap, (pollId, optionId) => {
+            pollController.handleVote(pollId, optionId);
+          });
+        } else {
+          renderMessage(elements.messages, m, isMyMessage, messageMap);
+        }
         if (m.id) {
           messageMap.set(m.id, m);
         }
@@ -232,7 +279,14 @@ import { appState } from './core/appState.js';
       }
 
       const isMyMessage = message.nickname === appState.myNickname || message.clientId === appState.myClientId;
-      renderMessage(elements.messages, message, isMyMessage, messageMap);
+      // 如果是投票消息，使用专门的渲染函数
+      if (message.poll) {
+        renderPollMessage(elements.messages, message, isMyMessage, messageMap, (pollId, optionId) => {
+          pollController.handleVote(pollId, optionId);
+        });
+      } else {
+        renderMessage(elements.messages, message, isMyMessage, messageMap);
+      }
 
       if (message.id) {
         messageMap.set(message.id, message);
@@ -255,6 +309,7 @@ import { appState } from './core/appState.js';
       if (cyberTheme && cyberTheme.updateRoomInfo) {
         cyberTheme.updateRoomInfo(room);
       }
+      // 创建投票按钮始终显示（点击时会检查是否已加入房间）
     },
     onRoomRefresh: (data) => {
       if (!elements.messages) return;
@@ -269,12 +324,39 @@ import { appState } from './core/appState.js';
 
       // 房间刷新后，历史消息会通过 Socket 的 history 事件自动加载
     },
+    onPollMessage: (data) => {
+      if (!elements.messages) return;
+
+      const isMyMessage = data.nickname === appState.myNickname;
+      renderPollMessage(elements.messages, data, isMyMessage, messageMap, (pollId, optionId) => {
+        pollController.handleVote(pollId, optionId);
+      });
+
+      if (data.id) {
+        messageMap.set(data.id, data);
+      }
+    },
+    onPollResults: (data) => {
+      if (!elements.messages || !data.results) return;
+
+      // 获取用户已投的选项（从响应中获取，只有当前用户投票时才更新）
+      const userVote = data.sessionId === socketManager.socket.id ? data.userVote : null;
+
+      updatePollResults(elements.messages, data.pollId, data.results, userVote);
+    }
   });
 
   // 设置加入按钮事件
+  let joinButtonCheckCount = 0;
   function setupJoinButton() {
     if (!elements.joinBtn) {
-      setTimeout(setupJoinButton, 200);
+      // 使用更短的延迟和更可靠的检查
+      joinButtonCheckCount++;
+      if (joinButtonCheckCount > 50) {
+        console.error('Failed to find joinBtn after 50 attempts');
+        return;
+      }
+      setTimeout(setupJoinButton, 100);
       return;
     }
 
@@ -282,7 +364,7 @@ import { appState } from './core/appState.js';
       return;
     }
 
-    elements.joinBtn.addEventListener("click", (e) => {
+    const handleJoinClick = (e) => {
       e.preventDefault();
       e.stopPropagation();
 
@@ -306,8 +388,12 @@ import { appState } from './core/appState.js';
         : null;
 
       roomController.joinRoom(roomId, nickname, password);
-    });
+    };
 
+    // 使用多种方式绑定事件，确保在小窗口下也能工作
+    elements.joinBtn.addEventListener("click", handleJoinClick);
+    elements.joinBtn.addEventListener("touchstart", handleJoinClick);
+    
     elements.joinBtn.dataset.listenerAttached = 'true';
   }
 
@@ -474,13 +560,27 @@ import { appState } from './core/appState.js';
 
   const { nickname: qsNickname, password: qsPassword } = getSearchParams();
   const shouldOpenPrefill = Boolean(appState.currentRoomId) || Boolean(qsNickname) || Boolean(qsPassword);
+  let prefillModalOpened = false; // 防止重复打开
 
   function openPrefillModalIfNeeded() {
+    // 如果已经加入房间，不打开模态框
+    if (appState.joined) {
+      return;
+    }
+    
+    // 如果模态框已经打开过，不再打开
+    if (prefillModalOpened) {
+      return;
+    }
+    
     if (!elements.prefillJoinModal || !shouldOpenPrefill) return;
+    
     if (elements.prefillNickname) elements.prefillNickname.value = qsNickname || (elements.nicknameInput ? elements.nicknameInput.value : "") || "";
     if (elements.prefillRoomId) elements.prefillRoomId.value = appState.currentRoomId || (elements.roomIdInput ? elements.roomIdInput.value : "") || "";
     if (elements.prefillPassword) elements.prefillPassword.value = qsPassword || "";
+    
     modalManager.openPrefillModal();
+    prefillModalOpened = true;
   }
 
   if (elements.prefillConfirmBtn) {
@@ -499,12 +599,30 @@ import { appState } from './core/appState.js';
       }
 
       if (elements.joinBtn) {
-        elements.joinBtn.dispatchEvent(new Event("click"));
+        // 确保事件能正确触发
+        const clickEvent = new MouseEvent("click", {
+          bubbles: true,
+          cancelable: true,
+          view: window
+        });
+        elements.joinBtn.dispatchEvent(clickEvent);
       }
 
       modalManager.closePrefillModal();
     });
   }
+  
+  // 监听窗口大小变化，避免重复打开模态框
+  let resizeTimeout;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+      // 窗口大小变化时，如果已经加入房间，确保不打开模态框
+      if (appState.joined && elements.prefillJoinModal && !elements.prefillJoinModal.classList.contains('hidden')) {
+        modalManager.closePrefillModal();
+      }
+    }, 300);
+  });
 
   // 初始化
   if (document.readyState === 'loading') {
