@@ -14,9 +14,12 @@
  */
 export function createCyberMessage(msg, isMyMessage = false) {
   const time = new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const nicknameSafe = msg.status === 'sending' ? '' : escapeHtml(msg.nickname || 'Unknown');
+  const messageText = msg.status === 'sending' ? 'Sending...' : (msg.text || '');
+  const textSafe = escapeHtml(messageText);
   
   // 头像占位符（基于名字首字母）
-  const avatarChar = (msg.nickname || '?').charAt(0).toUpperCase();
+  const avatarChar = escapeHtml((msg.nickname || '?').charAt(0).toUpperCase());
   
   const alignmentClass = isMyMessage ? 'my-message' : '';
   const highlightClass = msg.isHighlighted ? 'highlighted' : '';
@@ -34,11 +37,11 @@ export function createCyberMessage(msg, isMyMessage = false) {
       <div class="cyber-message-avatar">${avatarChar}</div>
       <div class="cyber-message-content">
         <div class="cyber-message-header">
-          <span class="cyber-message-nickname">${msg.status === 'sending' ? '' : (msg.nickname || 'Unknown')}</span>
+          <span class="cyber-message-nickname">${nicknameSafe}</span>
           <span class="cyber-message-time">${time}</span>
         </div>
         <div class="cyber-message-body">
-          <div class="cyber-message-text">${msg.status === 'sending' ? 'Sending...' : (msg.text || '')}</div>
+          <div class="cyber-message-text">${textSafe}</div>
         </div>
       </div>
     </div>
@@ -66,10 +69,12 @@ export function renderMessage(container, message, isMyMessage = false, messageMa
   if (message.parentMessageId && message.status !== 'sending' && messageMap) {
     const parentMsg = messageMap.get(message.parentMessageId);
     if (parentMsg) {
+      const parentPreviewRaw = parentMsg.text || '';
+      const parentPreview = parentPreviewRaw.length > 50 ? parentPreviewRaw.substring(0, 50) + '...' : parentPreviewRaw;
       const replyHTML = `
         <div class="cyber-message-reply">
-          <span class="cyber-message-reply-author">${parentMsg.nickname || 'Unknown'}:</span>
-          <span>${(parentMsg.text || '').substring(0, 50)}${(parentMsg.text || '').length > 50 ? '...' : ''}</span>
+          <span class="cyber-message-reply-author">${escapeHtml(parentMsg.nickname || 'Unknown')}:</span>
+          <span>${escapeHtml(parentPreview)}</span>
         </div>
       `;
       // 在消息文本前插入回复引用
@@ -134,19 +139,18 @@ function attachReplyHandlers(messageEl, message, messageMap) {
   };
   
   // PC端：单击触发回复
+  // 移动端：也使用单击触发回复（更符合用户习惯）
   messageEl.addEventListener('click', (e) => {
-    if (window.innerWidth > 768) {
-      e.stopPropagation();
-      triggerReply();
-    }
+    e.stopPropagation();
+    triggerReply();
   });
   
-  // 移动端：长按触发回复
+  // 移动端：保留长按作为备用方式（减少长按时间到300ms）
   messageEl.addEventListener('touchstart', (e) => {
     clickTimer = setTimeout(() => {
       e.preventDefault();
       triggerReply();
-    }, 500);
+    }, 300);
   });
   
   messageEl.addEventListener('touchend', () => {
@@ -178,10 +182,13 @@ export function renderUsers(container, users) {
     const li = document.createElement('li');
     li.className = 'cyber-user-item';
     const avatarChar = name.charAt(0).toUpperCase();
-    li.innerHTML = `
-      <div class="cyber-user-avatar">${avatarChar}</div>
-      <span>${name}</span>
-    `;
+    const avatarEl = document.createElement('div');
+    avatarEl.className = 'cyber-user-avatar';
+    avatarEl.textContent = avatarChar;
+    const nameEl = document.createElement('span');
+    nameEl.textContent = name;
+    li.appendChild(avatarEl);
+    li.appendChild(nameEl);
     container.appendChild(li);
   }
 }

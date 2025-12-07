@@ -130,11 +130,16 @@ export const cyberTheme = {
       });
     }
 
-    // 设置按钮 - 打开侧边栏
+    // 设置按钮 - 根据窗口大小决定打开桌面端侧边栏或移动端侧边栏
     const settingsToggle = document.getElementById('settings-toggle');
     if (settingsToggle) {
       settingsToggle.addEventListener('click', () => {
-        this.toggleSidebar();
+        // 小窗口模式下（<=768px）使用移动端侧边栏，否则使用桌面端侧边栏
+        if (window.innerWidth <= 768) {
+          this.openMobileSidebar();
+        } else {
+          this.toggleSidebar();
+        }
       });
     }
 
@@ -150,7 +155,10 @@ export const cyberTheme = {
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         if (this.elements.replyBar && !this.elements.replyBar.classList.contains('hidden')) {
-          if (window.cancelReply && typeof window.cancelReply === 'function') {
+          if (window.eventBus && typeof window.eventBus.emit === 'function') {
+            window.eventBus.emit('message:cancelReply');
+          } else if (window.cancelReply && typeof window.cancelReply === 'function') {
+            // 兼容旧版本
             window.cancelReply();
           }
         }

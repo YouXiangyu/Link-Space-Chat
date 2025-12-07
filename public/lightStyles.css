@@ -426,6 +426,12 @@ body.light-theme #messages {
     background-color: #ffffff !important;
 }
 
+/* 修复小窗口模式下底部输入区域的背景色 */
+body.light-theme #main-interface>section>div:last-child {
+    background: #ffffff !important;
+    border-top: 1px solid #e2e8f0 !important;
+}
+
 /* Scrollbar - 美化滚动条 */
 body.light-theme ::-webkit-scrollbar {
     width: 8px !important;

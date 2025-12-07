@@ -35,7 +35,8 @@ export class ShareManager {
     
     // 生成二维码
     if (typeof QRCode !== 'undefined') {
-      QRCode.toCanvas(window.location.href, { width: 200, margin: 1 }, (err, canvas) => {
+      const canvas = document.createElement('canvas');
+      QRCode.toCanvas(canvas, window.location.href, { width: 200, margin: 1 }, (err) => {
         if (err) {
           console.error('Failed to generate QR code:', err);
           return;

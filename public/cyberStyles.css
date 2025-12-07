@@ -790,7 +790,8 @@
     bottom: 0;
     z-index: 100;
     flex-shrink: 0;
-    background: rgba(5, 5, 5, 0.95);
+    background: rgba(5, 5, 5, 0.3);
+    /* 使用半透明背景，与整体背景融合，不再显示明显的黑色条 */
     backdrop-filter: blur(10px);
     padding-bottom: env(safe-area-inset-bottom, 0);
     /* 适配iPhone底部安全区域 */
