@@ -1,0 +1,421 @@
+Commit: aed1f14
+Date: Sun Dec 7 15:49:41 2025 +0800
+Message: fix: 小窗口下的适配问题
+Body: 在窗口宽度小于768px时，会切换页面的显示逻辑，但并不合理。比如，左上角菜单栏和右上角设置冲突，回复切换为“长按”且pc端难以触发，背景窗格显示错误（浅色），等问题。
+
+- 输入区域设置的黑色背景，替换为与主题一致的背景。
+- 保留长按三秒回复，也支持单击回复
+- 删除小窗口下复杂饿渐变等背景描述，而是替换成白色。
+- 小窗口右上角设置的展开逻辑，修改了展开后菜单栏的宽度判定。
+
+---------------------------date=short
+Commit: 1b09997
+Date: Tue Dec 2 15:17:09 2025 +0800
+Message: feat: introduce comprehensive cyber theme styles for various UI components.
+Body: 
+---------------------------date=short
+Commit: 399a0d6
+Date: Mon Dec 1 14:02:37 2025 +0800
+Message: fix:修复小窗口下ui显示异常的问题
+Body: 
+---------------------------date=short
+Commit: 4825321
+Date: Mon Dec 1 13:58:44 2025 +0800
+Message: fix:绑定取消投票的按钮
+Body: 
+---------------------------date=short
+Commit: 1bd0163
+Date: Mon Dec 1 13:52:43 2025 +0800
+Message: fix:投票问题ui显示等等问题
+Body: 
+---------------------------date=short
+Commit: e07c175
+Date: Mon Dec 1 00:09:36 2025 +0800
+Message: feat: 瀹炵幇鎶曠エ鍔熻兘 (Phase 5)
+Body: - 娣诲姞鎶曠エ鏁版嵁搴撴ā鍧?(db/polls.js)
+- 鍒涘缓鎶曠エ鐩稿叧鏁版嵁琛?(polls, poll_options, votes)
+- 瀹炵幇鍒涘缓鎶曠エ銆佹姇绁ㄣ€佽幏鍙栨姇绁ㄧ粨鏋滅殑Socket浜嬩欢澶勭悊
+- 娣诲姞鍓嶇鎶曠エ鎺у埗鍣ㄥ拰UI缁勪欢
+- 瀹炵幇鎶曠エ娑堟伅娓叉煋鍜屽疄鏃剁粨鏋滄洿鏂?- 鏀寔2-10涓€夐」锛屽彲閫夋埅姝㈡椂闂?- 鍩轰簬session_id鐨勪竴浜轰竴绁ㄦ満鍒讹紝鏀寔鏀规姇
+- 娣诲姞鎶曠エ鐩稿叧鐨凜SS鏍峰紡
+
+瀹屾垚鏃堕棿: 2025-01-12
+
+---------------------------date=short
+Commit: 188fa3b
+Date: Wed Nov 26 21:49:57 2025 +0800
+Message: fix:取消延迟清理功能
+Body: 
+---------------------------date=short
+Commit: 58620a9
+Date: Wed Nov 26 21:23:23 2025 +0800
+Message: fix:无法加载历史消息
+Body: public\js\modules\roomController出现逻辑性错误
+1. 后端join_room成功后，先给socket发hitory事件
+2. 前端收到history并且将消息渲染进messages容器
+3. 紧接着，joinRoom的回调，执行上面这段if(messages){messages.innerHTML =
+   "";}把刚刚渲染好的历史全部清空了，只留下空容器，所以界面看不到任何历史
+-
+这是因为，旧的处理逻辑是先清空再加载历史记录，而修改失误，变成了先读取历史记录，再清空。导致历史记录不会加载
+
+---------------------------date=short
+Commit: de5b58b
+Date: Wed Nov 26 17:10:16 2025 +0800
+Message: chore:删除了不再使用的数据库文件和历史css
+Body: 
+---------------------------date=short
+Commit: b716168
+Date: Wed Nov 26 14:37:22 2025 +0800
+Message: fix:修复进入房间后闪退的问题
+Body: 
+---------------------------date=short
+Commit: dc869c8
+Date: Wed Nov 26 13:56:21 2025 +0800
+Message: feat:ui适配功能开发
+Body: 
+---------------------------date=short
+Commit: a4595d6
+Date: Wed Nov 26 13:50:13 2025 +0800
+Message: chore:新ui的适配，整理文件
+Body: 
+---------------------------date=short
+Commit: b978652
+Date: Wed Nov 26 12:27:25 2025 +0800
+Message: Merge pull request #8 from YouXiangyu/format
+Body: Format分支合并到main
+---------------------------date=short
+Commit: 3cf94f7
+Date: Wed Nov 26 12:24:34 2025 +0800
+Message: docs：readme重写，项目可读性增强
+Body: 
+---------------------------date=short
+Commit: 60a4db3
+Date: Wed Nov 26 11:49:16 2025 +0800
+Message: refactor: 解耦，删除重复代码，修复无效识别
+Body: 1.
+进入房间原先有两次不同的消息历史查询，删除其中一种。查询功能共用一套历史消息请求。
+2. emoji的复杂判断删除，不添加css格式
+3. 新增themeToast，将不同的toast分开
+4. app.js解耦，之前功能太乱了。
+5. requestLogger解耦程度太高，现在部分进行了重组
+
+---------------------------date=short
+Commit: dc87847
+Date: Tue Nov 25 18:10:07 2025 +0800
+Message: format the static file
+Body: - there are many html not used, clean and format the code
+
+---------------------------date=short
+Commit: 386bdda
+Date: Fri Nov 21 17:06:38 2025 +0800
+Message: 浅色主题
+Body: 
+---------------------------date=short
+Commit: 477efde
+Date: Wed Nov 19 23:44:16 2025 +0800
+Message: feat: add localization and remove light theme
+Body: 
+---------------------------date=short
+Commit: 2e4f673
+Date: Wed Nov 19 12:45:41 2025 +0800
+Message: Merge: Resolve conflicts, keep new Cyber theme UI
+Body: 
+---------------------------date=short
+Commit: be23939
+Date: Wed Nov 19 12:45:08 2025 +0800
+Message: feat: Implement new Acid Graphics + Terminal/Brutalism style UI with Cyber theme system
+Body: 
+---------------------------date=short
+Commit: ef389be
+Date: Wed Nov 19 09:38:49 2025 +0800
+Message: 娣诲姞涓婚鍒囨崲鍔熻兘锛氭敮鎸?绉嶄富棰橈紙娣辫壊銆佹祬鑹层€佽摑鑹层€佺豢鑹层€佺传鑹诧級锛屼慨澶嶆祬鑹蹭富棰樹晶杈规爮棰滆壊鍜宑heckbox鏍峰紡闂
+Body: 
+---------------------------date=short
+Commit: 305dc3d
+Date: Thu Nov 13 12:54:53 2025 +0800
+Message: Merge pull request #7 from YouXiangyu/optimize-test
+Body: Optimize test 性能优化
+---------------------------date=short
+Commit: 4efaf52
+Date: Thu Nov 13 11:50:59 2025 +0800
+Message: Improve start-chat.bat to auto-install dependencies
+Body: - Add automatic dependency check and installation
+- Users can now directly run start-chat.bat after pulling the project
+- No need to manually run npm install first
+
+---------------------------date=short
+Commit: 87e502e
+Date: Thu Nov 13 11:49:42 2025 +0800
+Message: Fix message isolation bug and remove database files from git
+Body: - Add roomId filtering in client-side message handlers to prevent cross-room message leaks
+- Ensure server-side messages include roomId for proper room isolation
+- Remove chat.db, chat.db-shm, chat.db-wal from git tracking
+- Update .gitignore to exclude all database files (*.db, *.db-shm, *.db-wal)
+
+---------------------------date=short
+Commit: bcda89e
+Date: Thu Nov 13 11:03:10 2025 +0800
+Message: Merge remote-tracking branch 'origin/optimize-test' - Resolve conflicts by keeping local step 8 implementation
+Body: 
+---------------------------date=short
+Commit: 03fbdad
+Date: Thu Nov 13 11:02:30 2025 +0800
+Message: Complete step 8: Frontend module refactoring and search UI optimization - Split app.js into ES modules - Split styles.css into functional CSS modules - Fix room_info event handling - Optimize search layout to vertical structure - Remove unused files
+Body: 
+---------------------------date=short
+Commit: 87ea55d
+Date: Thu Nov 13 01:52:53 2025 +0800
+Message: Step 8: Refactor frontend into ES modules - Split app.js into utils, stateStore, uiRenderer, socketClient, search, and index modules
+Body: 
+---------------------------date=short
+Commit: a4790b7
+Date: Thu Nov 13 01:46:17 2025 +0800
+Message: Fix code quality issues: Remove commented code, unify error handling, merge duplicate logic
+Body: 
+---------------------------date=short
+Commit: b86c0c9
+Date: Thu Nov 13 01:07:21 2025 +0800
+Message: Step 7: Database module layering - Split sqlite.js into db/index.js, migrations.js, rooms.js, messages.js, stats.js
+Body: 
+---------------------------date=short
+Commit: b08d0c7
+Date: Thu Nov 13 01:05:25 2025 +0800
+Message: Step 6: Socket event modularization - Create socket/index.js and handlers
+Body: 
+---------------------------date=short
+Commit: a4a4cc5
+Date: Thu Nov 13 01:02:04 2025 +0800
+Message: Step 5: Split rate limiter and message service - Create services/rateLimiter.js and services/messageService.js
+Body: 
+---------------------------date=short
+Commit: 3ad6542
+Date: Thu Nov 13 01:00:40 2025 +0800
+Message: Step 4: Room and user state management service - Create services/roomState.js
+Body: 
+---------------------------date=short
+Commit: c75f289
+Date: Thu Nov 13 00:58:38 2025 +0800
+Message: Step 3: Extract health check snapshot generation to services/healthReporter.js
+Body: 
+---------------------------date=short
+Commit: a84944c
+Date: Thu Nov 13 00:57:37 2025 +0800
+Message: Step 2: Split request logger and slow request tracker middlewares
+Body: 
+---------------------------date=short
+Commit: b66b517
+Date: Thu Nov 13 00:55:29 2025 +0800
+Message: 姝ラ1: 缁熶竴閰嶇疆涓績 - 鍒涘缓config/index.js闆嗕腑绠＄悊鎵€鏈夐厤缃」
+Body: 
+---------------------------date=short
+Commit: f6dda23
+Date: Wed Nov 12 21:38:15 2025 +0800
+Message: Merge pull request #6 from YouXiangyu/phase3
+Body: Phase3 phase3功能已完善
+---------------------------date=short
+Commit: 6fe6194
+Date: Wed Nov 12 21:31:36 2025 +0800
+Message: feat: 浼樺寲绉诲姩绔悳绱㈢晫闈㈠竷灞€
+Body: 
+---------------------------date=short
+Commit: 579118a
+Date: Wed Nov 12 21:12:48 2025 +0800
+Message: feat: 浼樺寲渚ц竟鏍忔洿澶氬姛鑳藉竷灞€
+Body: 
+---------------------------date=short
+Commit: 7da2e81
+Date: Wed Nov 12 20:38:04 2025 +0800
+Message: 更新UI设计
+Body: - 对侧边栏进行了修正，功能样貌更加整洁
+- 对回复等功能做了一定优化
+
+---------------------------date=short
+Commit: 3fa0e0b
+Date: Wed Nov 12 19:49:24 2025 +0800
+Message: feat: 瀹屾垚 Phase 3 娑堟伅浜や簰鍔熻兘
+Body: 
+---------------------------date=short
+Commit: cfce7b4
+Date: Wed Nov 12 16:45:58 2025 +0800
+Message: Merge pull request #5 from YouXiangyu/phase2
+Body: remove files
+---------------------------date=short
+Commit: 2de324b
+Date: Wed Nov 12 16:33:41 2025 +0800
+Message: remove files
+Body: - there is a tmp fold pull on the github
+e Please enter the commit message for your changes. Lines starting
+
+---------------------------date=short
+Commit: 1af484c
+Date: Wed Nov 12 16:20:39 2025 +0800
+Message: Merge pull request #4 from YouXiangyu/phase2
+Body: Phase2 更新
+---------------------------date=short
+Commit: b79a587
+Date: Wed Nov 12 00:27:24 2025 +0800
+Message: 修复链接分享逻辑
+Body: - 增加链接自动填入房间号
+- 增加链接同步分享房间密码
+
+---------------------------date=short
+Commit: d10c77b
+Date: Wed Nov 12 00:01:27 2025 +0800
+Message: 修复消息显示样式
+Body: - 更新普通消息，发送中消息，以及高亮文本的显示逻辑
+
+---------------------------date=short
+Commit: 5a740fa
+Date: Tue Nov 11 21:24:25 2025 +0800
+Message: feat: enforce empty-room reset on join; when no online users, clear messages, unset password/creator, then skip password check
+Body: 
+---------------------------date=short
+Commit: fc476ff
+Date: Tue Nov 11 21:10:28 2025 +0800
+Message: feat: Option C - remove delay; immediate room reset on disconnect and nickname conflict cleanup
+Body: 
+---------------------------date=short
+Commit: ee7cd04
+Date: Tue Nov 11 21:05:53 2025 +0800
+Message: fix: prevent room info modal from opening when clicking '缂栬緫鎴块棿' (stop propagation)
+Body: 
+---------------------------date=short
+Commit: c49cf84
+Date: Tue Nov 11 20:58:15 2025 +0800
+Message: 修复密码
+Body: - 当用户加密房间后，房间无法解密
+
+---------------------------date=short
+Commit: 6518ddd
+Date: Tue Nov 11 18:04:10 2025 +0800
+Message: Merge pull request #3 from YouXiangyu/phase2
+Body: Phase2功能完善
+---------------------------date=short
+Commit: 241ad1a
+Date: Tue Nov 11 17:54:20 2025 +0800
+Message: docs: restore previous detailed README
+Body: 
+---------------------------date=short
+Commit: 0d53b4b
+Date: Tue Nov 11 17:52:40 2025 +0800
+Message: fix: XSS-safe text rendering; await DB init/migrate before start; fix nickname liveness check; docs: dedupe README; chore: add .gitignore; chore: clear chat history
+Body: 
+---------------------------date=short
+Commit: b32855d
+Date: Tue Nov 11 16:10:49 2025 +0800
+Message: feat: edit modal shows '淇敼瀵嗙爜骞舵竻绌鸿亰澶╄褰? when password exists; gate password changes behind explicit confirmation
+Body: 
+---------------------------date=short
+Commit: 0075bba
+Date: Tue Nov 11 16:01:43 2025 +0800
+Message: fix: preserve room meta on password change; enforce password; move room info entry to top-left brand and sidebar; restore name/desc display
+Body: 
+---------------------------date=short
+Commit: f46a3f8
+Date: Tue Nov 11 15:53:04 2025 +0800
+Message: feat: time display (absolute+hover relative), room info modal with password toggle, optimistic clientId replace; lock edit after confirm
+Body: 
+---------------------------date=short
+Commit: e195b20
+Date: Tue Nov 11 15:21:40 2025 +0800
+Message: docs: fix README timestamps (2025-11) and repo URL
+Body: 
+---------------------------date=short
+Commit: 50388c7
+Date: Tue Nov 11 11:34:37 2025 +0800
+Message: docs: Update README for Phase 2 completion
+Body: 
+---------------------------date=short
+Commit: cf4b98c
+Date: Tue Nov 11 11:33:53 2025 +0800
+Message: Phase 2: Lightweight feature enhancements - Room features, message types, UX improvements
+Body: 
+---------------------------date=short
+Commit: c6ad2e1
+Date: Tue Nov 11 11:17:56 2025 +0800
+Message: Merge pull request #2 from YouXiangyu/phase1
+Body: feat: phase1性能优化
+---------------------------date=short
+Commit: c0587ec
+Date: Tue Nov 11 10:59:59 2025 +0800
+Message: feat: 瀹屾垚 Phase 1 鎬ц兘浼樺寲涓庣ǔ瀹氭€ф彁鍗? - 鏁版嵁搴撲紭鍖栵細WAL妯″紡銆佽仈鍚堢储寮曘€佹秷鎭嚜鍔ㄦ竻鐞嗐€佽縼绉昏剼鏈?- 鍐呭瓨绠＄悊锛氬欢杩熸竻鐞嗐€佸唴瀛樼洃鎺у憡璀︺€丼ocket.IO浼樺寲 - 浠ｇ爜浼樺寲锛氱粺涓€閿欒澶勭悊銆佽姹傛棩蹇椼€丣SDoc娉ㄩ噴 - 鐩戞帶涓庡仴搴锋鏌ワ細澧炲己/health绔偣銆佹€ц兘鐩戞帶銆佸畾鏈熻嚜妫€
+Body: 
+---------------------------date=short
+Commit: 8d68f66
+Date: Tue Nov 11 10:43:59 2025 +0800
+Message: Update README development plan
+Body: 
+---------------------------date=short
+Commit: 213a887
+Date: Tue Nov 11 09:57:58 2025 +0800
+Message: Update README with new features
+Body: 
+---------------------------date=short
+Commit: c8f9741
+Date: Tue Nov 11 09:56:04 2025 +0800
+Message: Add ngrok support and message rate limiting
+Body: 
+---------------------------date=short
+Commit: 06e4be7
+Date: Thu Oct 30 09:26:14 2025 +0800
+Message: 端口设置更新
+Body: 端口被固定到3000，而且使用port环境变量。不太安全，不太方便
+1. 环境变量为LINK_SPACE_PORT
+2. 可以通过start.bat传参
+3. 同步更新readme文档说明，更准确
+
+---------------------------date=short
+Commit: f1b095b
+Date: Thu Oct 30 09:09:45 2025 +0800
+Message: 优雅退出优化
+Body: 1. 优雅退出的两遍ctrl+c会导致readline接口被重复关闭导致报错。已修复
+
+---------------------------date=short
+Commit: 2b95479
+Date: Thu Oct 30 01:15:21 2025 +0800
+Message: 添加分享功能、优化代码逻辑
+Body: 1. 增加分享功能，二维码库
+2. 修改进入房间，退出房间的逻辑
+3. 修改项目名称，添加队名，增加引导
+4. 首页增加引导部分
+
+---------------------------date=short
+Commit: ebf279c
+Date: Sun Oct 26 14:46:50 2025 +0800
+Message: add pm2 on server
+Body: 
+---------------------------date=short
+Commit: 4779c4d
+Date: Thu Oct 23 09:48:56 2025 +0800
+Message: 更新readme
+Body: 上次上传忘记传readme了
+1. 更新readme文件
+2. 更新.gitigore文件
+
+---------------------------date=short
+Commit: a7d9029
+Date: Thu Oct 23 09:43:01 2025 +0800
+Message: 文件简化工作
+Body: 之前的简化未能同步github，并且没有为数据库创建模板文件
+1. 进一步简化，使远程仓库的文件按照.gitignore删除库文件
+2. 脚本创建chat.db，使本地chat.db不受影响
+3. 同步更新readme.md文件
+
+---------------------------date=short
+Commit: 8e0c1de
+Date: Thu Oct 23 09:26:43 2025 +0800
+Message: 简化文件内容
+Body: 1. 添加了.gitignore文件，可以简化仓库储存内容。
+2. 对readme进行修正
+
+---------------------------date=short
+Commit: eda8bed
+Date: Wed Oct 22 20:45:50 2025 +0800
+Message: 修改了readme文件，更符合github需求
+Body: 
+---------------------------date=short
+Commit: a4d76b9
+Date: Wed Oct 22 19:37:39 2025 +0800
+Message: 首次提交我的my-chat项目
+Body: 
+---------------------------date=short
