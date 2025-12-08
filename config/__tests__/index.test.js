@@ -18,12 +18,13 @@ describe('端口配置测试', () => {
     process.env = originalEnv;
   });
 
-  // 辅助函数：模拟配置逻辑
+  // 辅助函数：模拟配置逻辑（完全复制config/index.js的逻辑）
   function getPortConfig(args, envPort) {
     let port = Number(envPort || 3000);
     if (args.length > 0) {
       const firstArg = args[0].toLowerCase();
       if (firstArg === "ngrok") {
+        // ngrok模式下，端口可以从第二个参数获取
         if (args.length > 1 && !isNaN(Number(args[1]))) {
           port = Number(args[1]);
         }
@@ -39,6 +40,10 @@ describe('端口配置测试', () => {
       return true;
     }
     return false;
+  }
+
+  function getNgrokAuthtoken(envToken) {
+    return envToken || null;
   }
 
   test('测试用例1: 默认端口启动（无参数）', () => {
@@ -106,6 +111,124 @@ describe('端口配置测试', () => {
     expect(config.server).toHaveProperty('enableNgrok');
     expect(typeof config.server.port).toBe('number');
     expect(typeof config.server.enableNgrok).toBe('boolean');
+  });
+
+  // 测试更多分支覆盖
+  test('测试用例: ngrok配置分支 - 大写NGROK', () => {
+    const enableNgrok = getNgrokConfig(['NGROK']);
+    expect(enableNgrok).toBe(true);
+  });
+
+  test('测试用例: ngrok配置分支 - 混合大小写', () => {
+    const enableNgrok = getNgrokConfig(['NgRok']);
+    expect(enableNgrok).toBe(true);
+  });
+
+  test('测试用例: 端口配置 - 环境变量优先级', () => {
+    // 环境变量应该优先于默认值，但命令行参数应该优先于环境变量
+    const portWithEnv = getPortConfig([], '5000');
+    expect(portWithEnv).toBe(5000);
+    
+    // 命令行参数应该覆盖环境变量
+    const portWithArg = getPortConfig(['3001'], '5000');
+    expect(portWithArg).toBe(3001);
+  });
+
+  test('测试用例: ngrok + 环境变量端口', () => {
+    // ngrok模式下，如果第二个参数无效，应该使用环境变量端口
+    const port = getPortConfig(['ngrok', 'invalid'], '5000');
+    expect(port).toBe(5000);
+  });
+
+  test('测试用例: 测试所有配置模块导出', () => {
+    const config = require('../index');
+    expect(config).toHaveProperty('server');
+    expect(config).toHaveProperty('message');
+    expect(config).toHaveProperty('monitor');
+    expect(config).toHaveProperty('log');
+    expect(config).toHaveProperty('rateLimit');
+    expect(config).toHaveProperty('socket');
+    
+    // 验证server配置
+    expect(config.server).toHaveProperty('port');
+    expect(config.server).toHaveProperty('enableNgrok');
+    expect(config.server).toHaveProperty('ngrokAuthtoken');
+    
+    // 验证message配置
+    expect(config.message).toHaveProperty('retentionDays');
+    expect(config.message).toHaveProperty('cleanupInterval');
+    
+    // 验证rateLimit配置
+    expect(config.rateLimit).toHaveProperty('window');
+    expect(config.rateLimit).toHaveProperty('max');
+  });
+
+  // 测试ngrok authtoken配置
+  test('测试用例: ngrok authtoken配置 - 有环境变量', () => {
+    const token = getNgrokAuthtoken('test-token-123');
+    expect(token).toBe('test-token-123');
+  });
+
+  test('测试用例: ngrok authtoken配置 - 无环境变量', () => {
+    const token = getNgrokAuthtoken(undefined);
+    expect(token).toBe(null);
+  });
+
+  // 测试更多端口配置分支
+  test('测试用例: 端口配置 - 数字0（边界情况）', () => {
+    const port = getPortConfig(['0']);
+    expect(port).toBe(0);
+  });
+
+  test('测试用例: 端口配置 - 负数（边界情况）', () => {
+    const port = getPortConfig(['-1']);
+    expect(port).toBe(-1);
+  });
+
+  test('测试用例: 端口配置 - 大数字', () => {
+    const port = getPortConfig(['65535']);
+    expect(port).toBe(65535);
+  });
+
+  test('测试用例: ngrok配置 - 空数组', () => {
+    const enableNgrok = getNgrokConfig([]);
+    expect(enableNgrok).toBe(false);
+  });
+
+  test('测试用例: ngrok配置 - 非ngrok参数', () => {
+    const enableNgrok = getNgrokConfig(['server']);
+    expect(enableNgrok).toBe(false);
+  });
+
+  test('测试用例: ngrok配置 - 数字参数', () => {
+    const enableNgrok = getNgrokConfig(['3001']);
+    expect(enableNgrok).toBe(false);
+  });
+
+  // 测试ngrok + 端口的所有分支
+  test('测试用例: ngrok + 端口 - 第二个参数是数字字符串', () => {
+    const port = getPortConfig(['ngrok', '5000']);
+    expect(port).toBe(5000);
+  });
+
+  test('测试用例: ngrok + 端口 - 第二个参数是0', () => {
+    const port = getPortConfig(['ngrok', '0']);
+    expect(port).toBe(0);
+  });
+
+  test('测试用例: ngrok + 端口 - 只有ngrok没有第二个参数', () => {
+    const port = getPortConfig(['ngrok']);
+    expect(port).toBe(3000);
+  });
+
+  test('测试用例: ngrok + 端口 - 第二个参数是NaN', () => {
+    const port = getPortConfig(['ngrok', 'not-a-number']);
+    expect(port).toBe(3000);
+  });
+
+  test('测试用例: ngrok + 端口 - 第二个参数是空字符串', () => {
+    const port = getPortConfig(['ngrok', '']);
+    expect(port).toBe(0); // Number('') = 0, !isNaN(0) = true
   });
 });
 

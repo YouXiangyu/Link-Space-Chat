@@ -182,5 +182,49 @@ describe('消息服务测试', () => {
       );
     });
   });
+
+  describe('getRecentMessages函数', () => {
+    const mockDb = {
+      getRecentMessages: jest.fn()
+    };
+
+    beforeEach(() => {
+      mockDb.getRecentMessages.mockClear();
+    });
+
+    test('测试用例: 获取房间历史消息（默认limit）', async () => {
+      const mockMessages = [
+        { id: 1, text: 'Message 1', nickname: 'User1' },
+        { id: 2, text: 'Message 2', nickname: 'User2' }
+      ];
+      mockDb.getRecentMessages.mockResolvedValue(mockMessages);
+
+      const result = await messageService.getRecentMessages(mockDb, 'room1');
+
+      expect(mockDb.getRecentMessages).toHaveBeenCalledWith('room1', 20);
+      expect(result).toEqual(mockMessages);
+    });
+
+    test('测试用例: 获取房间历史消息（指定limit）', async () => {
+      const mockMessages = [
+        { id: 1, text: 'Message 1', nickname: 'User1' }
+      ];
+      mockDb.getRecentMessages.mockResolvedValue(mockMessages);
+
+      const result = await messageService.getRecentMessages(mockDb, 'room1', 10);
+
+      expect(mockDb.getRecentMessages).toHaveBeenCalledWith('room1', 10);
+      expect(result).toEqual(mockMessages);
+    });
+
+    test('测试用例: 获取空房间历史消息', async () => {
+      mockDb.getRecentMessages.mockResolvedValue([]);
+
+      const result = await messageService.getRecentMessages(mockDb, 'empty-room');
+
+      expect(mockDb.getRecentMessages).toHaveBeenCalledWith('empty-room', 20);
+      expect(result).toEqual([]);
+    });
+  });
 });
 
