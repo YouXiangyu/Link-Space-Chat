@@ -47,3 +47,6 @@ Thumbs.db
 
 # Temporary workspace
 tmp/
+
+# Documentation
+docs/
