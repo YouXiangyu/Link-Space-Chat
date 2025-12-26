@@ -2,7 +2,7 @@
 
 本工具是一个轻量级的即时消息平台，专为跨网络环境（局域网/公共互联网）设计。它允许用户通过链接快速加入聊天室，无需注册或安装客户端。
 
-**更新时间**: 2025年11月26日（Phase 3 消息交互功能已完成）
+**更新时间**: 2025年12月26日 (整理项目结构，清理冗余文件，优化 .gitignore)
 ---
 
 ## 目录
@@ -204,23 +204,9 @@ my-chat/
 ├── utils/                # 工具函数
 │   └── errors.js         # 统一错误处理格式
 ├── public/               # 前端静态资源
-│   ├── index.html        # 前端页面
-│   ├── cyberStyles.css   # 赛博风格样式
-│   ├── lightStyles.css   # 浅色主题样式
-│   ├── uiAdapter.js      # 渲染适配层
-│   ├── cyberTheme.js     # 赛博主题交互
-│   └── js/               # 前端模块化代码
-│       ├── app.js        # 当前主入口（模块化版本）
-│       ├── modules/      # 功能模块
-│       │   ├── socketManager.js    # Socket 连接管理
-│       │   ├── roomController.js   # 房间操作控制
-│       │   ├── messageController.js # 消息发送控制
-│       │   └── searchController.js  # 消息搜索控制
-│       ├── core/         # 核心功能
-│       │   ├── appState.js          # 应用状态管理
-│       │   └── eventBus.js          # 事件总线
-│       └── utils/        # 前端工具函数
-└── docs/                 # 文档和归档（需求文档、演示材料等）
+├── tmp/                  # 本地临时文件夹 (已在 Git 中忽略)
+├── docs/                 # 文档和归档 (需求文档、演示材料等)
+└── README.md             # 项目说明文档
 ```
 
 ### 核心模块说明
