@@ -6,6 +6,7 @@ const leaveRoomHandler = require("./handlers/leaveRoom");
 const chatMessageHandler = require("./handlers/chatMessage");
 const getRoomInfoHandler = require("./handlers/getRoomInfo");
 const updateRoomHandler = require("./handlers/updateRoom");
+const pollHandler = require("./handlers/poll");
 
 /**
  * 注册Socket事件处理器
@@ -47,6 +48,7 @@ function registerSocketHandlers({ io, roomState, rateLimiter, messageService, db
     chatMessageHandler(socket, socketState, { io, rateLimiter, messageService, db });
     getRoomInfoHandler(socket, socketState, { db });
     updateRoomHandler(socket, socketState, { io, db });
+    pollHandler(socket, socketState, { io, messageService, db });
   });
 }
 

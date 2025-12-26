@@ -38,8 +38,3 @@ export function formatRelativeTime(ts) {
   return `${days}天前`;
 }
 
-
-
-
-
-

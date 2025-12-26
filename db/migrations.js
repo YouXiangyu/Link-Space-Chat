@@ -65,6 +65,73 @@ function migrateDatabase(db) {
             return reject(err);
           }
         }
+      });
+      
+      // Phase 5: 创建投票相关表
+      // 创建 polls 表（投票主表）
+      db.run(`CREATE TABLE IF NOT EXISTS polls (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        message_id INTEGER NOT NULL,
+        expires_at INTEGER,
+        created_at INTEGER NOT NULL,
+        FOREIGN KEY(message_id) REFERENCES messages(id) ON DELETE CASCADE
+      )`, (err) => {
+        if (err && !err.message.includes("already exists")) {
+          console.warn("创建 polls 表时出现警告:", err.message);
+        }
+      });
+      
+      // 创建 poll_options 表（投票选项表）
+      db.run(`CREATE TABLE IF NOT EXISTS poll_options (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        poll_id INTEGER NOT NULL,
+        option_text TEXT NOT NULL,
+        option_index INTEGER NOT NULL,
+        created_at INTEGER NOT NULL,
+        FOREIGN KEY(poll_id) REFERENCES polls(id) ON DELETE CASCADE
+      )`, (err) => {
+        if (err && !err.message.includes("already exists")) {
+          console.warn("创建 poll_options 表时出现警告:", err.message);
+        }
+      });
+      
+      // 创建 votes 表（投票记录表）
+      db.run(`CREATE TABLE IF NOT EXISTS votes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        option_id INTEGER NOT NULL,
+        session_id TEXT NOT NULL,
+        created_at INTEGER NOT NULL,
+        FOREIGN KEY(option_id) REFERENCES poll_options(id) ON DELETE CASCADE,
+        UNIQUE(option_id, session_id)
+      )`, (err) => {
+        if (err && !err.message.includes("already exists")) {
+          console.warn("创建 votes 表时出现警告:", err.message);
+        }
+      });
+      
+      // 创建投票相关索引
+      db.run("CREATE INDEX IF NOT EXISTS idx_polls_message ON polls(message_id)", (err) => {
+        if (err && !err.message.includes("already exists") && !err.message.includes("duplicate")) {
+          console.warn("创建 idx_polls_message 索引时出现警告:", err.message);
+        }
+      });
+      
+      db.run("CREATE INDEX IF NOT EXISTS idx_poll_options_poll ON poll_options(poll_id)", (err) => {
+        if (err && !err.message.includes("already exists") && !err.message.includes("duplicate")) {
+          console.warn("创建 idx_poll_options_poll 索引时出现警告:", err.message);
+        }
+      });
+      
+      db.run("CREATE INDEX IF NOT EXISTS idx_votes_option ON votes(option_id)", (err) => {
+        if (err && !err.message.includes("already exists") && !err.message.includes("duplicate")) {
+          console.warn("创建 idx_votes_option 索引时出现警告:", err.message);
+        }
+      });
+      
+      db.run("CREATE INDEX IF NOT EXISTS idx_votes_session ON votes(session_id)", (err) => {
+        if (err && !err.message.includes("already exists") && !err.message.includes("duplicate")) {
+          console.warn("创建 idx_votes_session 索引时出现警告:", err.message);
+        }
         resolve();
       });
     });

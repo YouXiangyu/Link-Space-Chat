@@ -49,7 +49,9 @@ export class SocketManager {
       onChatMessage,
       onRoomUsers,
       onRoomInfo,
-      onRoomRefresh
+      onRoomRefresh,
+      onPollMessage,
+      onPollResults
     } = callbacks;
 
     this.socket.on("server-ping", (callback) => {
@@ -76,6 +78,14 @@ export class SocketManager {
     this.socket.on("room_refresh", (payload) => {
       onRoomRefresh?.(payload);
     });
+
+    this.socket.on("poll_message", (data) => {
+      onPollMessage?.(data);
+    });
+
+    this.socket.on("poll_results", (data) => {
+      onPollResults?.(data);
+    });
   }
 
   joinRoom(roomId, nickname, password = null, callback) {
@@ -98,6 +108,18 @@ export class SocketManager {
     this.socket.emit("update_room", updates, callback);
   }
 
+  createPoll(data, callback) {
+    this.socket.emit("create_poll", data, callback);
+  }
+
+  vote(data, callback) {
+    this.socket.emit("vote", data, callback);
+  }
+
+  getPollResults(pollId, callback) {
+    this.socket.emit("get_poll_results", { pollId }, callback);
+  }
+
   isConnected() {
     return this.connected;
   }
@@ -106,6 +128,10 @@ export class SocketManager {
     return this.socket;
   }
 }
+
+
+
+
 
 
 

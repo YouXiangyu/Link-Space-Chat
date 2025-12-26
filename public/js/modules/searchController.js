@@ -121,8 +121,3 @@ export function createSearchController({
   };
 }
 
-
-
-
-
-

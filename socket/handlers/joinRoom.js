@@ -118,7 +118,27 @@ function joinRoomHandler(socket, socketState, { io, roomState, messageService, d
       roomState.addUser(roomId, socket.id, socketState.nickname);
 
       // 加载房间的历史消息（最近20条）
-      const history = await messageService.getRecentMessages(db, roomId, 20);
+      let history = await messageService.getRecentMessages(db, roomId, 20);
+      
+      // 为每条消息加载投票数据（如果有）
+      for (let i = 0; i < history.length; i++) {
+        const message = history[i];
+        const poll = await db.getPollByMessageId(message.id);
+        if (poll) {
+          // 获取用户已投的选项（如果有）
+          const userVote = await db.getUserVote({
+            pollId: poll.id,
+            sessionId: socket.id
+          });
+          history[i] = {
+            ...message,
+            poll: {
+              ...poll,
+              userVote
+            }
+          };
+        }
+      }
       
       // 获取房间信息（名称、描述、密码等）
       const roomInfo = await db.getRoom(roomId);
