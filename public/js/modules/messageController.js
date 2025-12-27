@@ -115,7 +115,7 @@ export function createMessageController({
           if (msgEl) msgEl.remove();
         }
 
-        if (resp?.error === "rate_limit") {
+        if (resp?.error === "RATE_LIMIT") {
           if (rateLimitToast) {
             showRateLimitToast(rateLimitToast);
           }
